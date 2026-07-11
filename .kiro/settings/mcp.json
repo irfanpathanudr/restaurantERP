@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "mysql": {
+      "command": "uvx",
+      "args": ["mcp-server-mysql"],
+      "env": {
+        "MYSQL_HOST": "localhost",
+        "MYSQL_PORT": "3306",
+        "MYSQL_USER": "root",
+        "MYSQL_PASSWORD": "",
+        "MYSQL_DATABASE": "restaurant_erp"
+      },
+      "disabled": false,
+      "autoApprove": []
+    }
+  }
+}

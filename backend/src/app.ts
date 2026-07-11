@@ -45,6 +45,16 @@ class App {
     const paymentRoutes = require('./routes/payment.routes').default;
     const invoiceRoutes = require('./routes/invoice.routes').default;
     const employeeRoutes = require('./routes/employee.routes').default;
+    const recipeRoutes = require('./routes/recipe.routes').default;
+    const vendorRoutes = require('./routes/vendor.routes').default;
+    const kitchenRoutes = require('./routes/kitchen.routes').default;
+    const expenseRoutes = require('./routes/expense.routes').default;
+    const reservationRoutes = require('./routes/reservation.routes').default;
+    const auditLogRoutes = require('./routes/audit-log.routes').default;
+    const purchaseOrderRoutes = require('./routes/purchase-order.routes').default;
+    const reportRoutes = require('./routes/report.routes').default;
+    const dashboardRoutes = require('./routes/dashboard.routes').default;
+    const settingRoutes = require('./routes/setting.routes').default;
 
     // API routes
     this.app.use('/api/v1/auth', authRoutes);
@@ -63,6 +73,16 @@ class App {
     this.app.use('/api/v1/payments', paymentRoutes);
     this.app.use('/api/v1/invoices', invoiceRoutes);
     this.app.use('/api/v1/employees', employeeRoutes);
+    this.app.use('/api/v1/recipes', recipeRoutes);
+    this.app.use('/api/v1/vendors', vendorRoutes);
+    this.app.use('/api/v1/kitchens', kitchenRoutes);
+    this.app.use('/api/v1/expenses', expenseRoutes);
+    this.app.use('/api/v1/reservations', reservationRoutes);
+    this.app.use('/api/v1/audit-logs', auditLogRoutes);
+    this.app.use('/api/v1/purchase-orders', purchaseOrderRoutes);
+    this.app.use('/api/v1/reports', reportRoutes);
+    this.app.use('/api/v1/dashboard', dashboardRoutes);
+    this.app.use('/api/v1/settings', settingRoutes);
     
     // API documentation (Swagger) will be added here
     

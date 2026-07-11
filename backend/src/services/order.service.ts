@@ -1,4 +1,4 @@
-import { AppDataSource } from '../config/database';
+import AppDataSource from '../config/database';
 import { Order } from '../database/entities/Order.entity';
 import { OrderItem } from '../database/entities/OrderItem.entity';
 import { CreateOrderDto, OrderStatus } from '../dto/order/CreateOrderDto';

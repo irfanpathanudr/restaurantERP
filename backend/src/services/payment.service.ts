@@ -1,4 +1,4 @@
-import { AppDataSource } from '../config/database';
+import AppDataSource from '../config/database';
 import { Payment } from '../database/entities/Payment.entity';
 import { CreatePaymentDto, PaymentStatus } from '../dto/payment/CreatePaymentDto';
 import logger from '../config/logger';

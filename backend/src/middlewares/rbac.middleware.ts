@@ -149,13 +149,13 @@ const userHasPermission = async (userId: string, permissionName: string): Promis
   // Check user-specific permissions (UBAC) - these override role permissions
   const userPermission = await userPermissionRepository.findOne({
     where: {
-      userId: userId,
-      permissionId: permission.id,
+      user_id: userId,
+      permission_id: permission.id,
     },
   });
 
   if (userPermission) {
-    return userPermission.isGranted;
+    return userPermission.is_granted;
   }
 
   // Check role-based permissions (RBAC)

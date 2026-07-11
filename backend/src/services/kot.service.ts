@@ -1,4 +1,4 @@
-import { AppDataSource } from '../config/database';
+import AppDataSource from '../config/database';
 import { KOT } from '../database/entities/KOT.entity';
 import { CreateKOTDto } from '../dto/kot/CreateKOTDto';
 import { KOTStatus } from '../dto/kot/UpdateKOTDto';

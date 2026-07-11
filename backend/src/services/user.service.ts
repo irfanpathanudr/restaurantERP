@@ -1,4 +1,4 @@
-import { AppDataSource } from '../config/database';
+import AppDataSource from '../config/database';
 import { User } from '../database/entities/User.entity';
 import { CreateUserDto } from '../dto/user/CreateUserDto';
 import { UpdateUserDto } from '../dto/user/UpdateUserDto';

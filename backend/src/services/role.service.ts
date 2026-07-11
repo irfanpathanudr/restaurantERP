@@ -1,4 +1,4 @@
-import { AppDataSource } from '../config/database';
+import AppDataSource from '../config/database';
 import { Role } from '../database/entities/Role.entity';
 import { Permission } from '../database/entities/Permission.entity';
 import { CreateRoleDto } from '../dto/role/CreateRoleDto';

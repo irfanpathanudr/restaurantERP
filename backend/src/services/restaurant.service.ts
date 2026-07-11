@@ -1,4 +1,4 @@
-import { AppDataSource } from '../config/database';
+import AppDataSource from '../config/database';
 import { Restaurant } from '../database/entities/Restaurant.entity';
 import { CreateRestaurantDto } from '../dto/restaurant/CreateRestaurantDto';
 import { UpdateRestaurantDto } from '../dto/restaurant/UpdateRestaurantDto';

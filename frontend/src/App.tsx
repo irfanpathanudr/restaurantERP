@@ -17,16 +17,44 @@ import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
 
 // Dashboard Pages
 import DashboardPage from './pages/dashboard/DashboardPage';
+import VendorsPage from './pages/vendors/VendorsPage';
 import OrdersPage from './pages/orders/OrdersPage';
+import KOTPage from './pages/kot/KOTPage';
+import TablesPage from './pages/tables/TablesPage';
 import MenuPage from './pages/menu/MenuPage';
 import CustomersPage from './pages/customers/CustomersPage';
-import TablesPage from './pages/tables/TablesPage';
-import KOTPage from './pages/kot/KOTPage';
 import InventoryPage from './pages/inventory/InventoryPage';
-import VendorsPage from './pages/vendors/VendorsPage';
 import EmployeesPage from './pages/employees/EmployeesPage';
 import ReportsPage from './pages/reports/ReportsPage';
 import SettingsPage from './pages/settings/SettingsPage';
+import RecipesPage from './pages/recipes/RecipesPage';
+import ReservationsPage from './pages/reservations/ReservationsPage';
+import PurchaseOrdersPage from './pages/purchase-orders/PurchaseOrdersPage';
+import ExpensesPage from './pages/expenses/ExpensesPage';
+import PaymentsPage from './pages/payments/PaymentsPage';
+import RestaurantsPage from './pages/restaurants/RestaurantsPage';
+import BranchesPage from './pages/branches/BranchesPage';
+import KitchensPage from './pages/kitchens/KitchensPage';
+import AuditLogsPage from './pages/audit-logs/AuditLogsPage';
+import UsersPage from './pages/users/UsersPage';
+import RolesPage from './pages/roles/RolesPage';
+import PermissionsPage from './pages/permissions/PermissionsPage';
+
+// Placeholder component for pages under development
+const ComingSoon = ({ pageName }: { pageName: string }) => {
+  return (
+    <div className="flex items-center justify-center min-h-[60vh]">
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
+          {pageName}
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400">
+          This page is under development
+        </p>
+      </div>
+    </div>
+  );
+};
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
@@ -34,8 +62,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-900">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 dark:text-gray-400">Loading...</p>
+        </div>
       </div>
     );
   }
@@ -53,9 +84,15 @@ function App() {
 
   useEffect(() => {
     // Initialize theme
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | 'system' | null;
     if (savedTheme) {
-      dispatch(setTheme(savedTheme));
+      dispatch(setTheme(savedTheme as any));
+    } else {
+      // Apply initial theme
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      }
     }
 
     // Check authentication
@@ -101,14 +138,26 @@ function App() {
       >
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/orders" element={<OrdersPage />} />
-        <Route path="/menu" element={<MenuPage />} />
-        <Route path="/customers" element={<CustomersPage />} />
-        <Route path="/tables" element={<TablesPage />} />
         <Route path="/kot" element={<KOTPage />} />
+        <Route path="/tables" element={<TablesPage />} />
+        <Route path="/menu" element={<MenuPage />} />
+        <Route path="/recipes" element={<RecipesPage />} />
+        <Route path="/customers" element={<CustomersPage />} />
+        <Route path="/reservations" element={<ReservationsPage />} />
         <Route path="/inventory" element={<InventoryPage />} />
         <Route path="/vendors" element={<VendorsPage />} />
+        <Route path="/purchase-orders" element={<PurchaseOrdersPage />} />
+        <Route path="/expenses" element={<ExpensesPage />} />
+        <Route path="/payments" element={<PaymentsPage />} />
         <Route path="/employees" element={<EmployeesPage />} />
+        <Route path="/restaurants" element={<RestaurantsPage />} />
+        <Route path="/branches" element={<BranchesPage />} />
+        <Route path="/kitchens" element={<KitchensPage />} />
         <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/audit-logs" element={<AuditLogsPage />} />
+        <Route path="/users" element={<UsersPage />} />
+        <Route path="/roles" element={<RolesPage />} />
+        <Route path="/permissions" element={<PermissionsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
 

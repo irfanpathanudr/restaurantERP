@@ -1,4 +1,4 @@
-import { AppDataSource } from '../config/database';
+import AppDataSource from '../config/database';
 import { MenuItem } from '../database/entities/MenuItem.entity';
 import { CreateMenuItemDto } from '../dto/menu-item/CreateMenuItemDto';
 import { UpdateMenuItemDto } from '../dto/menu-item/UpdateMenuItemDto';
