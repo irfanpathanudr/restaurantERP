@@ -13,7 +13,7 @@ export class AppError extends Error {
   }
 }
 
-export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
+export const errorHandler = (err: Error, req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof AppError) {
     logger.error('Application error', {
       message: err.message,

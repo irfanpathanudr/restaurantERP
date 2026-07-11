@@ -73,3 +73,7 @@ export class PasswordUtil {
     return crypto.randomBytes(length).toString('hex');
   }
 }
+
+// Export standalone functions for convenience
+export const hashPassword = (password: string) => PasswordUtil.hash(password);
+export const comparePassword = (password: string, hashedPassword: string) => PasswordUtil.compare(password, hashedPassword);

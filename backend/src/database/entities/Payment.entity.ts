@@ -57,7 +57,7 @@ export class Payment extends BaseEntity {
   @Column({ type: 'varchar', length: 50, default: 'success' })
   payment_status: string;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP' })
   payment_date: Date;
 
   @Column({ type: 'text', nullable: true })

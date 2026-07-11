@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import dotenv from 'dotenv';
-import app from './app';
+import appInstance from './app';
 import AppDataSource from './config/database';
 import logger from './config/logger';
 
@@ -14,15 +14,36 @@ AppDataSource.initialize()
   .then(() => {
     logger.info('Database connected successfully');
     
+    // Initialize routes after database connection
+    try {
+      appInstance.initializeRoutes();
+      logger.info('Routes initialized successfully');
+    } catch (error) {
+      logger.error('Route initialization failed', { 
+        error: error instanceof Error ? {
+          message: error.message,
+          stack: error.stack,
+          name: error.name
+        } : error 
+      });
+      throw error;
+    }
+    
     // Start server
-    app.listen(PORT, () => {
+    appInstance.app.listen(PORT, () => {
       logger.info(`Server is running on port ${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`Health check: http://localhost:${PORT}/health`);
     });
   })
   .catch((error) => {
-    logger.error('Database connection failed', { error });
+    logger.error('Database connection failed', { 
+      error: error instanceof Error ? {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      } : error 
+    });
     process.exit(1);
   });
 

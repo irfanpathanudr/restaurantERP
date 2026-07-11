@@ -3,10 +3,8 @@ import AppDataSource from '../config/database';
 import { User } from '../database/entities/User.entity';
 
 export class UserRepository {
-  private repository: Repository<User>;
-
-  constructor() {
-    this.repository = AppDataSource.getRepository(User);
+  private get repository(): Repository<User> {
+    return AppDataSource.getRepository(User);
   }
 
   /**

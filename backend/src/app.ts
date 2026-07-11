@@ -16,7 +16,57 @@ class App {
   constructor() {
     this.app = express();
     this.initializeMiddlewares();
-    this.initializeRoutes();
+  }
+
+  public initializeRoutes() {
+    // Health check endpoint
+    this.app.get('/health', (req, res) => {
+      res.status(200).json({
+        success: true,
+        message: 'Server is healthy',
+        timestamp: new Date().toISOString(),
+      });
+    });
+
+    // Import routes (lazy loaded after database connection)
+    const authRoutes = require('./routes/auth.routes').default;
+    const userRoutes = require('./routes/user.routes').default;
+    const roleRoutes = require('./routes/role.routes').default;
+    const permissionRoutes = require('./routes/permission.routes').default;
+    const restaurantRoutes = require('./routes/restaurant.routes').default;
+    const branchRoutes = require('./routes/branch.routes').default;
+    const categoryRoutes = require('./routes/category.routes').default;
+    const menuItemRoutes = require('./routes/menu-item.routes').default;
+    const tableRoutes = require('./routes/table.routes').default;
+    const orderRoutes = require('./routes/order.routes').default;
+    const kotRoutes = require('./routes/kot.routes').default;
+    const customerRoutes = require('./routes/customer.routes').default;
+    const inventoryRoutes = require('./routes/inventory.routes').default;
+    const paymentRoutes = require('./routes/payment.routes').default;
+    const invoiceRoutes = require('./routes/invoice.routes').default;
+    const employeeRoutes = require('./routes/employee.routes').default;
+
+    // API routes
+    this.app.use('/api/v1/auth', authRoutes);
+    this.app.use('/api/v1/users', userRoutes);
+    this.app.use('/api/v1/roles', roleRoutes);
+    this.app.use('/api/v1/permissions', permissionRoutes);
+    this.app.use('/api/v1/restaurants', restaurantRoutes);
+    this.app.use('/api/v1/branches', branchRoutes);
+    this.app.use('/api/v1/categories', categoryRoutes);
+    this.app.use('/api/v1/menu-items', menuItemRoutes);
+    this.app.use('/api/v1/tables', tableRoutes);
+    this.app.use('/api/v1/orders', orderRoutes);
+    this.app.use('/api/v1/kot', kotRoutes);
+    this.app.use('/api/v1/customers', customerRoutes);
+    this.app.use('/api/v1/inventory', inventoryRoutes);
+    this.app.use('/api/v1/payments', paymentRoutes);
+    this.app.use('/api/v1/invoices', invoiceRoutes);
+    this.app.use('/api/v1/employees', employeeRoutes);
+    
+    // API documentation (Swagger) will be added here
+    
+    // Error handling must be added AFTER all routes
     this.initializeErrorHandling();
   }
 
@@ -76,25 +126,6 @@ class App {
     this.app.use('/uploads', express.static('uploads'));
   }
 
-  private initializeRoutes() {
-    // Health check endpoint
-    this.app.get('/health', (req, res) => {
-      res.status(200).json({
-        success: true,
-        message: 'Server is healthy',
-        timestamp: new Date().toISOString(),
-      });
-    });
-
-    // Import routes
-    const authRoutes = require('./routes/auth.routes').default;
-
-    // API routes
-    this.app.use('/api/v1/auth', authRoutes);
-    
-    // API documentation (Swagger) will be added here
-  }
-
   private initializeErrorHandling() {
     // 404 handler
     this.app.use(notFoundHandler);
@@ -104,4 +135,5 @@ class App {
   }
 }
 
-export default new App().app;
+const appInstance = new App();
+export default appInstance;

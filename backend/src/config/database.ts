@@ -8,10 +8,10 @@ export const dataSourceOptions: DataSourceOptions = {
   type: 'mysql',
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '3306'),
-  username: process.env.DB_USER || 'restaurant_user',
-  password: process.env.DB_PASSWORD || 'restaurant_pass',
+  username: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || undefined, // undefined for empty password
   database: process.env.DB_NAME || 'restaurant_erp',
-  synchronize: process.env.NODE_ENV === 'development',
+  synchronize: false, // IMPORTANT: Set to false to use migrations
   logging: process.env.NODE_ENV === 'development',
   entities: [path.join(__dirname, '../database/entities/**/*.{ts,js}')],
   migrations: [path.join(__dirname, '../database/migrations/**/*.{ts,js}')],
@@ -19,7 +19,6 @@ export const dataSourceOptions: DataSourceOptions = {
   charset: 'utf8mb4',
   timezone: 'Z',
   connectTimeout: 60000,
-  acquireTimeout: 60000,
   extra: {
     connectionLimit: 20,
   },
