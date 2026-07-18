@@ -95,17 +95,28 @@ function App() {
       }
     }
 
-    // Check authentication
+    // Check authentication on mount and restore user state
     const initAuth = async () => {
+      dispatch(setLoading(true));
       try {
-        if (authService.isAuthenticated()) {
+        const token = localStorage.getItem('accessToken');
+        
+        if (token) {
+          // Fetch fresh user data from API
           const user = await authService.getCurrentUser();
           dispatch(setUser(user));
         } else {
-          dispatch(setLoading(false));
+          // No token, user is not authenticated
+          dispatch(setUser(null));
         }
       } catch (error) {
+        console.error('Auth initialization failed:', error);
+        // Clear invalid auth state
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
         dispatch(setUser(null));
+      } finally {
         dispatch(setLoading(false));
       }
     };

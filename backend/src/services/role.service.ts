@@ -40,7 +40,7 @@ export class RoleService {
     try {
       const roles = await this.roleRepository.find({
         relations: ['permissions'],
-        order: { createdAt: 'DESC' },
+        order: { created_at: 'DESC' },
       });
       return roles;
     } catch (error) {

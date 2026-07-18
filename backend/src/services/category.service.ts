@@ -25,13 +25,12 @@ export class CategoryService {
   async findAll(branchId?: string): Promise<Category[]> {
     try {
       const query = this.categoryRepository.createQueryBuilder('category')
-        .leftJoinAndSelect('category.menuItems', 'menuItems')
-        .leftJoinAndSelect('category.parentCategory', 'parentCategory')
-        .orderBy('category.name', 'ASC');
-
-      if (branchId) {
-        query.where('category.branchId = :branchId', { branchId });
-      }
+        .leftJoinAndSelect('category.menu_items', 'menuItems')
+        .leftJoinAndSelect('category.parent_category', 'parentCategory')
+        .leftJoinAndSelect('category.sub_categories', 'subCategories')
+        .where('category.deleted_at IS NULL')
+        .orderBy('category.sort_order', 'ASC')
+        .addOrderBy('category.name', 'ASC');
 
       return await query.getMany();
     } catch (error) {
@@ -44,7 +43,7 @@ export class CategoryService {
     try {
       return await this.categoryRepository.findOne({
         where: { id },
-        relations: ['menuItems', 'parentCategory', 'branch'],
+        relations: ['menu_items', 'parent_category', 'sub_categories'],
       });
     } catch (error) {
       logger.error(`Error fetching category ${id}:`, error);

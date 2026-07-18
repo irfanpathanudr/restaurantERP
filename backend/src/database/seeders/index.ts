@@ -15,6 +15,10 @@ import { seedCustomers } from './customer.seeder';
 import { seedVendors } from './vendor.seeder';
 import { seedRawMaterials } from './raw-material.seeder';
 import { seedEmployees } from './employee.seeder';
+import { seedReservations } from './reservation.seeder';
+import { seedOrders } from './order.seeder';
+import { seedExpenses } from './expense.seeder';
+import { seedPayments } from './payment.seeder';
 
 dotenv.config();
 
@@ -65,6 +69,18 @@ const runSeeders = async () => {
 
     await seedEmployees(AppDataSource);
     logger.info('✓ Employees seeded successfully');
+
+    await seedReservations(AppDataSource);
+    logger.info('✓ Reservations seeded successfully');
+
+    await seedOrders(AppDataSource);
+    logger.info('✓ Orders seeded successfully');
+
+    await seedExpenses(AppDataSource);
+    logger.info('✓ Expenses seeded successfully');
+
+    await seedPayments(AppDataSource);
+    logger.info('✓ Payments seeded successfully');
 
     logger.info('\n✅ Database seeding completed successfully!');
     process.exit(0);

@@ -55,14 +55,14 @@ export class InvoiceService {
       const query = this.invoiceRepository.createQueryBuilder('invoice')
         .leftJoinAndSelect('invoice.order', 'order')
         .leftJoinAndSelect('invoice.customer', 'customer')
-        .orderBy('invoice.createdAt', 'DESC');
+        .orderBy('invoice.created_at', 'DESC');
 
       if (filters?.customerId) {
         query.andWhere('invoice.customerId = :customerId', { customerId: filters.customerId });
       }
 
       if (filters?.startDate && filters?.endDate) {
-        query.andWhere('invoice.createdAt BETWEEN :startDate AND :endDate', {
+        query.andWhere('invoice.created_at BETWEEN :startDate AND :endDate', {
           startDate: filters.startDate,
           endDate: filters.endDate,
         });
@@ -106,8 +106,8 @@ export class InvoiceService {
         // Add invoice content
         doc.fontSize(20).text('INVOICE', { align: 'center' });
         doc.moveDown();
-        doc.fontSize(12).text(`Invoice Number: ${invoice.invoiceNumber}`);
-        doc.text(`Date: ${invoice.createdAt.toLocaleDateString()}`);
+        doc.fontSize(12).text(`Invoice Number: ${invoice.invoice_number}`);
+        doc.text(`Date: ${invoice.created_at.toLocaleDateString()}`);
         doc.moveDown();
 
         // Customer details

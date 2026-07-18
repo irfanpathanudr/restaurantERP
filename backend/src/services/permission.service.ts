@@ -35,7 +35,7 @@ export class PermissionService {
   async findAll(): Promise<Permission[]> {
     try {
       const permissions = await this.permissionRepository.find({
-        order: { module: 'ASC', action: 'ASC' },
+        order: { type: 'ASC', resource: 'ASC', action: 'ASC' },
       });
       return permissions;
     } catch (error) {

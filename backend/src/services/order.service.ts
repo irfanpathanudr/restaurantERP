@@ -82,7 +82,7 @@ export class OrderService {
         .leftJoinAndSelect('order.customer', 'customer')
         .leftJoinAndSelect('order.items', 'items')
         .leftJoinAndSelect('items.menuItem', 'menuItem')
-        .orderBy('order.createdAt', 'DESC');
+        .orderBy('order.created_at', 'DESC');
 
       if (filters?.branchId) {
         query.andWhere('order.branchId = :branchId', { branchId: filters.branchId });
@@ -101,7 +101,7 @@ export class OrderService {
       }
 
       if (filters?.startDate && filters?.endDate) {
-        query.andWhere('order.createdAt BETWEEN :startDate AND :endDate', {
+        query.andWhere('order.created_at BETWEEN :startDate AND :endDate', {
           startDate: filters.startDate,
           endDate: filters.endDate,
         });

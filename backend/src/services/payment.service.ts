@@ -35,7 +35,7 @@ export class PaymentService {
     try {
       const query = this.paymentRepository.createQueryBuilder('payment')
         .leftJoinAndSelect('payment.order', 'order')
-        .orderBy('payment.createdAt', 'DESC');
+        .orderBy('payment.created_at', 'DESC');
 
       if (filters?.orderId) {
         query.andWhere('payment.orderId = :orderId', { orderId: filters.orderId });
@@ -50,7 +50,7 @@ export class PaymentService {
       }
 
       if (filters?.startDate && filters?.endDate) {
-        query.andWhere('payment.createdAt BETWEEN :startDate AND :endDate', {
+        query.andWhere('payment.created_at BETWEEN :startDate AND :endDate', {
           startDate: filters.startDate,
           endDate: filters.endDate,
         });

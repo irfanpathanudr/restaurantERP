@@ -40,7 +40,7 @@ export class KOTService {
       const query = this.kotRepository.createQueryBuilder('kot')
         .leftJoinAndSelect('kot.order', 'order')
         .leftJoinAndSelect('kot.kitchen', 'kitchen')
-        .orderBy('kot.createdAt', 'DESC');
+        .orderBy('kot.created_at', 'DESC');
 
       if (filters?.orderId) {
         query.andWhere('kot.orderId = :orderId', { orderId: filters.orderId });

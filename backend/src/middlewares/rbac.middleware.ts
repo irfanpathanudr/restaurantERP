@@ -133,8 +133,20 @@ export const checkAllPermissions = (...permissionNames: string[]) => {
  * Checks both role-based and user-specific permissions (UBAC)
  */
 const userHasPermission = async (userId: string, permissionName: string): Promise<boolean> => {
+  const roleRepository = AppDataSource.getRepository(Role);
   const permissionRepository = AppDataSource.getRepository(Permission);
   const userPermissionRepository = AppDataSource.getRepository(UserPermission);
+
+  // Check if user has Super Admin role
+  const userRole = await roleRepository
+    .createQueryBuilder('role')
+    .innerJoin('role.users', 'user', 'user.id = :userId', { userId })
+    .getOne();
+
+  // Super Admin bypasses all permission checks
+  if (userRole && userRole.code === 'SUPER_ADMIN') {
+    return true;
+  }
 
   // Find the permission
   const permission = await permissionRepository.findOne({
@@ -159,13 +171,12 @@ const userHasPermission = async (userId: string, permissionName: string): Promis
   }
 
   // Check role-based permissions (RBAC)
-  const roleRepository = AppDataSource.getRepository(Role);
-  const userRole = await roleRepository
+  const roleWithPermission = await roleRepository
     .createQueryBuilder('role')
     .innerJoin('role.users', 'user', 'user.id = :userId', { userId })
     .innerJoinAndSelect('role.permissions', 'permission')
     .where('permission.id = :permissionId', { permissionId: permission.id })
     .getOne();
 
-  return !!userRole;
+  return !!roleWithPermission;
 };

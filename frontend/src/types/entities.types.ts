@@ -129,7 +129,7 @@ export interface User extends BaseEntity {
   first_name: string;
   last_name: string;
   phone?: string;
-  status: UserStatus;
+  is_active: boolean;
   role_id: string;
   branch_id?: string;
   last_login_at?: Date;

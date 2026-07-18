@@ -55,43 +55,21 @@ export class UserService {
 
       const query = this.userRepository.createQueryBuilder('user')
         .leftJoinAndSelect('user.role', 'role')
-        .leftJoinAndSelect('user.restaurant', 'restaurant')
-        .leftJoinAndSelect('user.branch', 'branch')
-        .select([
-          'user.id',
-          'user.firstName',
-          'user.lastName',
-          'user.email',
-          'user.phone',
-          'user.status',
-          'user.isEmailVerified',
-          'user.lastLoginAt',
-          'user.createdAt',
-          'user.updatedAt',
-          'role.id',
-          'role.name',
-          'restaurant.id',
-          'restaurant.name',
-          'branch.id',
-          'branch.name',
-        ]);
-
-      if (filters?.restaurantId) {
-        query.andWhere('user.restaurantId = :restaurantId', { restaurantId: filters.restaurantId });
-      }
+        .leftJoinAndSelect('role.permissions', 'permissions')
+        .where('user.deleted_at IS NULL');
 
       if (filters?.branchId) {
-        query.andWhere('user.branchId = :branchId', { branchId: filters.branchId });
+        query.andWhere('user.branch_id = :branchId', { branchId: filters.branchId });
       }
 
       if (filters?.status) {
-        query.andWhere('user.status = :status', { status: filters.status });
+        query.andWhere('user.is_active = :isActive', { isActive: filters.status === 'ACTIVE' });
       }
 
       const [data, total] = await query
         .skip(skip)
         .take(limit)
-        .orderBy('user.createdAt', 'DESC')
+        .orderBy('user.created_at', 'DESC')
         .getManyAndCount();
 
       return {
@@ -110,31 +88,7 @@ export class UserService {
     try {
       const user = await this.userRepository.findOne({
         where: { id },
-        relations: ['role', 'restaurant', 'branch'],
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          email: true,
-          phone: true,
-          status: true,
-          isEmailVerified: true,
-          lastLoginAt: true,
-          createdAt: true,
-          updatedAt: true,
-          role: {
-            id: true,
-            name: true,
-          },
-          restaurant: {
-            id: true,
-            name: true,
-          },
-          branch: {
-            id: true,
-            name: true,
-          },
-        },
+        relations: ['role', 'role.permissions'],
       });
 
       return user;
@@ -199,7 +153,7 @@ export class UserService {
         throw new Error('User not found');
       }
 
-      user.status = status;
+      user.is_active = status === 'ACTIVE';
       await this.userRepository.save(user);
 
       logger.info(`User status changed: ${id} -> ${status}`);

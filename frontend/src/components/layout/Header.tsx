@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { toggleSidebar, selectSidebarOpen, selectPageTitle } from '@/store/slices/uiSlice';
-import { selectUser } from '@/store/slices/authSlice';
+import { selectUser, logout as logoutAction } from '@/store/slices/authSlice';
 import { ThemeController } from '@/components/common/ThemeController';
 import { authService } from '@/services/auth.service';
 import {
@@ -29,10 +29,14 @@ export const Header: React.FC = () => {
   const handleLogout = async () => {
     try {
       await authService.logout();
-      navigate('/login');
+      dispatch(logoutAction()); // Clear Redux state
       toast.success('Logged out successfully');
+      navigate('/login', { replace: true });
     } catch (error) {
       console.error('Logout error:', error);
+      // Still logout locally even if API call fails
+      dispatch(logoutAction());
+      navigate('/login', { replace: true });
     }
   };
 

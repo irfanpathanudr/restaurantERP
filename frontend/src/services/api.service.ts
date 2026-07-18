@@ -77,8 +77,12 @@ class ApiService {
 
             return this.api(originalRequest);
           } catch (refreshError) {
+            // Clear auth data
             localStorage.removeItem('accessToken');
             localStorage.removeItem('refreshToken');
+            localStorage.removeItem('user');
+            
+            // Redirect to login
             window.location.href = '/login';
             return Promise.reject(refreshError);
           } finally {

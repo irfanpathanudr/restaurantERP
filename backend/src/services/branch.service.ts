@@ -27,7 +27,7 @@ export class BranchService {
     try {
       const queryBuilder = this.branchRepository.createQueryBuilder('branch')
         .leftJoinAndSelect('branch.restaurant', 'restaurant')
-        .orderBy('branch.createdAt', 'DESC');
+        .orderBy('branch.created_at', 'DESC');
 
       if (restaurantId) {
         queryBuilder.where('branch.restaurantId = :restaurantId', { restaurantId });

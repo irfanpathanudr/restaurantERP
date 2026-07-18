@@ -28,12 +28,11 @@ const UsersPage: React.FC = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
-    first_name: '',
-    last_name: '',
+    firstName: '',
+    lastName: '',
     phone: '',
-    role_id: '',
-    branch_id: '',
-    status: UserStatus.ACTIVE,
+    roleId: '',
+    branchId: '',
   });
 
   useEffect(() => {
@@ -68,12 +67,11 @@ const UsersPage: React.FC = () => {
     setFormData({
       email: '',
       password: '',
-      first_name: '',
-      last_name: '',
+      firstName: '',
+      lastName: '',
       phone: '',
-      role_id: '',
-      branch_id: '',
-      status: UserStatus.ACTIVE,
+      roleId: '',
+      branchId: '',
     });
     setShowModal(true);
   };
@@ -83,12 +81,11 @@ const UsersPage: React.FC = () => {
     setFormData({
       email: user.email,
       password: '',
-      first_name: user.first_name,
-      last_name: user.last_name,
+      firstName: user.first_name,
+      lastName: user.last_name,
       phone: user.phone || '',
-      role_id: user.role_id || '',
-      branch_id: user.branch_id || '',
-      status: user.status,
+      roleId: user.role_id || '',
+      branchId: user.branch_id || '',
     });
     setShowModal(true);
   };
@@ -100,9 +97,9 @@ const UsersPage: React.FC = () => {
 
   const handleToggleStatus = async (user: User) => {
     try {
-      const newStatus = user.status === UserStatus.ACTIVE ? UserStatus.INACTIVE : UserStatus.ACTIVE;
+      const newStatus = user.is_active ? 'INACTIVE' : 'ACTIVE';
       await userService.changeStatus(user.id, newStatus);
-      toast.success(`User ${newStatus === UserStatus.ACTIVE ? 'activated' : 'deactivated'} successfully`);
+      toast.success(`User ${newStatus === 'ACTIVE' ? 'activated' : 'deactivated'} successfully`);
       fetchUsers();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Status change failed');
@@ -112,15 +109,20 @@ const UsersPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      const submitData: any = {
+        ...formData,
+        branchId: formData.branchId || null,
+        roleId: formData.roleId || null,
+      };
+
       if (selectedUser) {
-        const updateData: any = { ...formData };
-        if (!updateData.password) {
-          delete updateData.password;
+        if (!submitData.password) {
+          delete submitData.password;
         }
-        await userService.update(selectedUser.id, updateData);
+        await userService.update(selectedUser.id, submitData);
         toast.success('User updated successfully');
       } else {
-        await userService.create(formData);
+        await userService.create(submitData);
         toast.success('User created successfully');
       }
       setShowModal(false);
@@ -142,13 +144,10 @@ const UsersPage: React.FC = () => {
     }
   };
 
-  const getStatusBadge = (status: UserStatus) => {
-    const variants = {
-      [UserStatus.ACTIVE]: 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400',
-      [UserStatus.INACTIVE]: 'bg-gray-100 dark:bg-gray-900/30 text-gray-600 dark:text-gray-400',
-      [UserStatus.SUSPENDED]: 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400',
-    };
-    return variants[status] || variants[UserStatus.INACTIVE];
+  const getStatusBadge = (isActive: boolean) => {
+    return isActive
+      ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+      : 'bg-gray-100 dark:bg-gray-900/30 text-gray-600 dark:text-gray-400';
   };
 
   const columns: ColumnDef<User>[] = [
@@ -186,11 +185,11 @@ const UsersPage: React.FC = () => {
       cell: ({ row }) => row.original.branch?.name || '-',
     },
     {
-      accessorKey: 'status',
+      accessorKey: 'is_active',
       header: 'Status',
       cell: ({ row }) => (
-        <span className={cn('px-2 py-1 text-xs font-medium rounded-full', getStatusBadge(row.original.status))}>
-          {row.original.status}
+        <span className={cn('px-2 py-1 text-xs font-medium rounded-full', getStatusBadge(row.original.is_active))}>
+          {row.original.is_active ? 'ACTIVE' : 'INACTIVE'}
         </span>
       ),
     },
@@ -209,46 +208,40 @@ const UsersPage: React.FC = () => {
         <div className="flex items-center gap-2">
           {(isSuperAdmin || currentUser?.id !== row.original.id) && (
             <>
-              <PermissionGuard permission="users:update">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  leftIcon={<Edit className="h-4 w-4" />}
-                  onClick={() => handleEdit(row.original)}
-                >
-                  Edit
-                </Button>
-              </PermissionGuard>
-              <PermissionGuard permission="users:update">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  leftIcon={
-                    row.original.status === UserStatus.ACTIVE 
-                      ? <Lock className="h-4 w-4" /> 
-                      : <Unlock className="h-4 w-4" />
-                  }
-                  onClick={() => handleToggleStatus(row.original)}
-                  className={cn(
-                    row.original.status === UserStatus.ACTIVE
-                      ? 'text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-900/20'
-                      : 'text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20'
-                  )}
-                >
-                  {row.original.status === UserStatus.ACTIVE ? 'Deactivate' : 'Activate'}
-                </Button>
-              </PermissionGuard>
-              <PermissionGuard permission="users:delete">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  leftIcon={<Trash2 className="h-4 w-4" />}
-                  onClick={() => handleDelete(row.original)}
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                >
-                  Delete
-                </Button>
-              </PermissionGuard>
+              <Button
+                size="sm"
+                variant="ghost"
+                leftIcon={<Edit className="h-4 w-4" />}
+                onClick={() => handleEdit(row.original)}
+              >
+                Edit
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                leftIcon={
+                  row.original.is_active 
+                    ? <Lock className="h-4 w-4" /> 
+                    : <Unlock className="h-4 w-4" />
+                }
+                onClick={() => handleToggleStatus(row.original)}
+                className={cn(
+                  row.original.is_active
+                    ? 'text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:hover:bg-orange-900/20'
+                    : 'text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20'
+                )}
+              >
+                {row.original.is_active ? 'Deactivate' : 'Activate'}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                leftIcon={<Trash2 className="h-4 w-4" />}
+                onClick={() => handleDelete(row.original)}
+                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+              >
+                Delete
+              </Button>
             </>
           )}
         </div>
@@ -271,7 +264,6 @@ const UsersPage: React.FC = () => {
         <Button
           leftIcon={<Plus className="h-5 w-5" />}
           onClick={handleCreate}
-          permission="users:create"
         >
           Add User
         </Button>
@@ -302,8 +294,8 @@ const UsersPage: React.FC = () => {
               <input
                 type="text"
                 required
-                value={formData.first_name}
-                onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
+                value={formData.firstName}
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
               />
             </div>
@@ -314,8 +306,8 @@ const UsersPage: React.FC = () => {
               <input
                 type="text"
                 required
-                value={formData.last_name}
-                onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
+                value={formData.lastName}
+                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
               />
             </div>
@@ -350,47 +342,34 @@ const UsersPage: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Phone
+              Phone *
             </label>
             <input
               type="tel"
+              required
+              minLength={10}
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder="Enter 10 digit phone number"
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Role *
+              Role
             </label>
             <select
-              required
-              value={formData.role_id}
-              onChange={(e) => setFormData({ ...formData, role_id: e.target.value })}
+              value={formData.roleId}
+              onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             >
-              <option value="">Select Role</option>
+              <option value="">Select Role (Optional)</option>
               {roles.map((role) => (
                 <option key={role.id} value={role.id}>
                   {role.name}
                 </option>
               ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Status
-            </label>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value as UserStatus })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-            >
-              <option value={UserStatus.ACTIVE}>Active</option>
-              <option value={UserStatus.INACTIVE}>Inactive</option>
-              <option value={UserStatus.SUSPENDED}>Suspended</option>
             </select>
           </div>
 

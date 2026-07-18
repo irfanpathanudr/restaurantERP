@@ -34,7 +34,7 @@ export class EmployeeService {
     try {
       const query = this.employeeRepository.createQueryBuilder('employee')
         .leftJoinAndSelect('employee.branch', 'branch')
-        .orderBy('employee.firstName', 'ASC');
+        .orderBy('employee.first_name', 'ASC');
 
       if (filters?.branchId) {
         query.andWhere('employee.branchId = :branchId', { branchId: filters.branchId });

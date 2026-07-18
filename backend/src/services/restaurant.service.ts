@@ -36,7 +36,7 @@ export class RestaurantService {
     try {
       const restaurants = await this.restaurantRepository.find({
         relations: ['branches'],
-        order: { createdAt: 'DESC' },
+        order: { created_at: 'DESC' },
       });
       return restaurants;
     } catch (error) {

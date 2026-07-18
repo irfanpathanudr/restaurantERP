@@ -35,9 +35,13 @@ const LoginPage = () => {
     setLoading(true);
     try {
       const response = await authService.login(data);
-      dispatch(setUser(response.data.user));
+      
+      // Fetch fresh user data with full relations
+      const currentUser = await authService.getCurrentUser();
+      dispatch(setUser(currentUser));
+      
       toast.success('Login successful!');
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Login failed');
     } finally {

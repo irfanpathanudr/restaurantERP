@@ -18,12 +18,14 @@ export const seedRoles = async () => {
   if (!superAdminRole) {
     superAdminRole = roleRepository.create({
       name: 'Super Admin',
-      code: 'super_admin',
+      code: 'SUPER_ADMIN',
       description: 'Full system access with all permissions',
       permissions: allPermissions,
     });
     await roleRepository.save(superAdminRole);
   } else {
+    // Update code if it's wrong
+    superAdminRole.code = 'SUPER_ADMIN';
     superAdminRole.permissions = allPermissions;
     await roleRepository.save(superAdminRole);
   }

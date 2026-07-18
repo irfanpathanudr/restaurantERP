@@ -25,7 +25,7 @@ export class CustomerService {
   async findAll(filters?: { type?: string; search?: string }): Promise<Customer[]> {
     try {
       const query = this.customerRepository.createQueryBuilder('customer')
-        .orderBy('customer.createdAt', 'DESC');
+        .orderBy('customer.created_at', 'DESC');
 
       if (filters?.type) {
         query.andWhere('customer.type = :type', { type: filters.type });

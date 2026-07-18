@@ -31,23 +31,20 @@ export class MenuItemService {
     try {
       const query = this.menuItemRepository.createQueryBuilder('menuItem')
         .leftJoinAndSelect('menuItem.category', 'category')
-        .leftJoinAndSelect('menuItem.branch', 'branch')
+        .leftJoinAndSelect('menuItem.kitchens', 'kitchens')
+        .where('menuItem.deleted_at IS NULL')
         .orderBy('menuItem.name', 'ASC');
 
-      if (filters?.branchId) {
-        query.andWhere('menuItem.branchId = :branchId', { branchId: filters.branchId });
-      }
-
       if (filters?.categoryId) {
-        query.andWhere('menuItem.categoryId = :categoryId', { categoryId: filters.categoryId });
+        query.andWhere('menuItem.category_id = :categoryId', { categoryId: filters.categoryId });
       }
 
       if (filters?.type) {
-        query.andWhere('menuItem.type = :type', { type: filters.type });
+        query.andWhere('menuItem.food_type = :type', { type: filters.type });
       }
 
       if (filters?.isAvailable !== undefined) {
-        query.andWhere('menuItem.isAvailable = :isAvailable', { isAvailable: filters.isAvailable });
+        query.andWhere('menuItem.is_available = :isAvailable', { isAvailable: filters.isAvailable });
       }
 
       return await query.getMany();
@@ -61,7 +58,7 @@ export class MenuItemService {
     try {
       return await this.menuItemRepository.findOne({
         where: { id },
-        relations: ['category', 'branch', 'recipe'],
+        relations: ['category', 'kitchens'],
       });
     } catch (error) {
       logger.error(`Error fetching menu item ${id}:`, error);
@@ -102,9 +99,9 @@ export class MenuItemService {
       const menuItem = await this.menuItemRepository.findOne({ where: { id } });
       if (!menuItem) throw new Error('Menu item not found');
 
-      menuItem.isAvailable = !menuItem.isAvailable;
+      menuItem.is_available = !menuItem.is_available;
       await this.menuItemRepository.save(menuItem);
-      logger.info(`Menu item availability toggled: ${id} -> ${menuItem.isAvailable}`);
+      logger.info(`Menu item availability toggled: ${id} -> ${menuItem.is_available}`);
       return menuItem;
     } catch (error) {
       logger.error(`Error toggling menu item availability ${id}:`, error);
