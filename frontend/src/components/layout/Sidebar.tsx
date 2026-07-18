@@ -63,7 +63,7 @@ const menuGroups: MenuGroup[] = [
         name: 'Overview',
         path: '/dashboard',
         icon: <LayoutDashboard className="h-5 w-5" />,
-        permission: 'dashboard:view',
+        permission: 'dashboard.read',
       },
     ],
   },
@@ -75,25 +75,25 @@ const menuGroups: MenuGroup[] = [
         name: 'Orders',
         path: '/orders',
         icon: <ShoppingCart className="h-5 w-5" />,
-        permission: 'orders:view',
+        permission: 'orders.read',
       },
       {
         name: 'KOT',
         path: '/kot',
         icon: <ClipboardList className="h-5 w-5" />,
-        permission: 'kot:view',
+        permission: 'kot.read',
       },
       {
         name: 'Tables',
         path: '/tables',
         icon: <Store className="h-5 w-5" />,
-        permission: 'tables:view',
+        permission: 'tables.read',
       },
       {
         name: 'Reservations',
         path: '/reservations',
         icon: <CalendarCheck className="h-5 w-5" />,
-        permission: 'reservations:view',
+        permission: 'reservations.read',
       },
     ],
   },
@@ -105,13 +105,13 @@ const menuGroups: MenuGroup[] = [
         name: 'Menu Items',
         path: '/menu',
         icon: <Utensils className="h-5 w-5" />,
-        permission: 'menu:view',
+        permission: 'menu.read',
       },
       {
         name: 'Recipes',
         path: '/recipes',
         icon: <BookOpen className="h-5 w-5" />,
-        permission: 'recipes:view',
+        permission: 'recipes.read',
       },
     ],
   },
@@ -123,7 +123,7 @@ const menuGroups: MenuGroup[] = [
         name: 'Customer List',
         path: '/customers',
         icon: <Users className="h-5 w-5" />,
-        permission: 'customers:view',
+        permission: 'customers.read',
       },
     ],
   },
@@ -135,19 +135,19 @@ const menuGroups: MenuGroup[] = [
         name: 'Stock',
         path: '/inventory',
         icon: <Package className="h-5 w-5" />,
-        permission: 'inventory:view',
+        permission: 'inventory.read',
       },
       {
         name: 'Vendors',
         path: '/vendors',
         icon: <Truck className="h-5 w-5" />,
-        permission: 'vendors:view',
+        permission: 'vendors.read',
       },
       {
         name: 'Purchase Orders',
         path: '/purchase-orders',
         icon: <Receipt className="h-5 w-5" />,
-        permission: 'purchase-orders:view',
+        permission: 'purchase-orders.read',
       },
     ],
   },
@@ -159,13 +159,13 @@ const menuGroups: MenuGroup[] = [
         name: 'Expenses',
         path: '/expenses',
         icon: <DollarSign className="h-5 w-5" />,
-        permission: 'expenses:view',
+        permission: 'expenses.read',
       },
       {
         name: 'Payments',
         path: '/payments',
         icon: <CreditCard className="h-5 w-5" />,
-        permission: 'payments:view',
+        permission: 'payments.read',
       },
     ],
   },
@@ -177,19 +177,19 @@ const menuGroups: MenuGroup[] = [
         name: 'Restaurants',
         path: '/restaurants',
         icon: <Building2 className="h-5 w-5" />,
-        permission: 'restaurants:view',
+        permission: 'restaurants.read',
       },
       {
         name: 'Branches',
         path: '/branches',
         icon: <FolderTree className="h-5 w-5" />,
-        permission: 'branches:view',
+        permission: 'branches.read',
       },
       {
         name: 'Kitchens',
         path: '/kitchens',
         icon: <ChefHat className="h-5 w-5" />,
-        permission: 'kitchens:view',
+        permission: 'kitchens.read',
       },
     ],
   },
@@ -201,25 +201,25 @@ const menuGroups: MenuGroup[] = [
         name: 'Employees',
         path: '/employees',
         icon: <UserCog className="h-5 w-5" />,
-        permission: 'employees:view',
+        permission: 'employees.read',
       },
       {
         name: 'Users',
         path: '/users',
         icon: <Users className="h-5 w-5" />,
-        permission: 'users:view',
+        permission: 'users.read',
       },
       {
         name: 'Roles',
         path: '/roles',
         icon: <Shield className="h-5 w-5" />,
-        permission: 'roles:view',
+        permission: 'roles.read',
       },
       {
         name: 'Permissions',
         path: '/permissions',
         icon: <Key className="h-5 w-5" />,
-        permission: 'permissions:view',
+        permission: 'permissions.read',
       },
     ],
   },
@@ -231,13 +231,13 @@ const menuGroups: MenuGroup[] = [
         name: 'Reports',
         path: '/reports',
         icon: <TrendingUp className="h-5 w-5" />,
-        permission: 'reports:view',
+        permission: 'reports.read',
       },
       {
         name: 'Audit Logs',
         path: '/audit-logs',
         icon: <Activity className="h-5 w-5" />,
-        permission: 'audit-logs:view',
+        permission: 'audit-logs.read',
       },
     ],
   },
@@ -249,7 +249,7 @@ const menuGroups: MenuGroup[] = [
         name: 'System Settings',
         path: '/settings',
         icon: <Settings className="h-5 w-5" />,
-        permission: 'settings:view',
+        permission: 'settings.read',
       },
     ],
   },
@@ -265,6 +265,18 @@ export const Sidebar: React.FC = () => {
   const [expandedGroups, setExpandedGroups] = useState<string[]>(['Dashboard']);
   
   const isSuperAdmin = user?.role?.code === 'SUPER_ADMIN';
+
+  // Keep the active route's group expanded so revisiting Menu/etc. doesn't feel broken
+  React.useEffect(() => {
+    const activeGroup = menuGroups.find((group) =>
+      group.items.some((item) => location.pathname === item.path)
+    );
+    if (activeGroup) {
+      setExpandedGroups((prev) =>
+        prev.includes(activeGroup.name) ? prev : [...prev, activeGroup.name]
+      );
+    }
+  }, [location.pathname]);
 
   // Debug logging
   React.useEffect(() => {

@@ -19,6 +19,7 @@ import { seedReservations } from './reservation.seeder';
 import { seedOrders } from './order.seeder';
 import { seedExpenses } from './expense.seeder';
 import { seedPayments } from './payment.seeder';
+import { seedKotUsers } from './kot-users.seeder';
 
 dotenv.config();
 
@@ -45,6 +46,9 @@ const runSeeders = async () => {
 
     await seedBranches(AppDataSource);
     logger.info('✓ Branches seeded successfully');
+
+    await seedKotUsers();
+    logger.info('✓ KOT staff users seeded successfully');
 
     await seedKitchens(AppDataSource);
     logger.info('✓ Kitchens seeded successfully');

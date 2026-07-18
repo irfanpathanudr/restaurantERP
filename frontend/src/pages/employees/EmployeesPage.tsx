@@ -251,7 +251,7 @@ const EmployeesPage: React.FC = () => {
       accessorKey: 'basic_salary',
       header: 'Salary',
       cell: ({ row }) => (
-        <span className="font-medium">${row.original.basic_salary.toFixed(2)}</span>
+        <span className="font-medium">${Number(row.original.basic_salary || 0).toFixed(2)}</span>
       ),
     },
     {

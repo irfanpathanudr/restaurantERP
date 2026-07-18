@@ -18,6 +18,7 @@
     "migration:create": "tsx ../node_modules/typeorm/cli.js migration:create",
     "migration:show": "tsx ../node_modules/typeorm/cli.js migration:show -d src/config/data-source.ts",
     "seed": "tsx src/database/seeders/index.ts",
+    "seed:kot": "tsx src/database/seeders/kot-floor.seeder.ts",
     "typeorm": "typeorm-ts-node-commonjs"
   },
   "dependencies": {

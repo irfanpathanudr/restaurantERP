@@ -62,7 +62,7 @@ const ExpensesPage = () => {
       header: 'Amount',
       cell: ({ row }) => (
         <span className="font-medium text-red-600 dark:text-red-400">
-          ${row.original.amount.toFixed(2)}
+          ${Number(row.original.amount || 0).toFixed(2)}
         </span>
       ),
     },

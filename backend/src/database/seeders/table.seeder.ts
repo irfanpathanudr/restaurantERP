@@ -1,77 +1,67 @@
 import { DataSource } from 'typeorm';
-import { Table } from '../entities/Table.entity';
+import { Table, TableStatus, TableType } from '../entities/Table.entity';
 import { Branch } from '../entities/Branch.entity';
+
+function tableTypeForCapacity(capacity: number): TableType {
+  if (capacity <= 2) return TableType.TWO_SEATER;
+  if (capacity <= 4) return TableType.FOUR_SEATER;
+  if (capacity <= 6) return TableType.SIX_SEATER;
+  if (capacity <= 8) return TableType.EIGHT_SEATER;
+  return TableType.CUSTOM;
+}
 
 export async function seedTables(dataSource: DataSource): Promise<void> {
   const tableRepo = dataSource.getRepository(Table);
   const branchRepo = dataSource.getRepository(Branch);
 
-  const branches = await branchRepo.find();
+  const branches = await branchRepo.find({ order: { code: 'ASC' } });
   if (branches.length === 0) {
     console.log('⚠️ Branches not found. Please seed branches first.');
     return;
   }
 
-  const tables: any[] = [];
-  
-  // Generate tables for each branch
-  for (const branch of branches.slice(0, 2)) {
-    // Small tables (2 seats)
-    for (let i = 1; i <= 5; i++) {
-      tables.push({
-        table_number: `T${String(tables.length + 1).padStart(3, '0')}`,
-        branch_id: branch.id,
-        capacity: 2,
-        status: 'AVAILABLE',
-        location: 'Main Floor',
-      });
-    }
-    
-    // Medium tables (4 seats)
-    for (let i = 1; i <= 8; i++) {
-      tables.push({
-        table_number: `T${String(tables.length + 1).padStart(3, '0')}`,
-        branch_id: branch.id,
-        capacity: 4,
-        status: 'AVAILABLE',
-        location: 'Main Floor',
-      });
-    }
-    
-    // Large tables (6 seats)
-    for (let i = 1; i <= 4; i++) {
-      tables.push({
-        table_number: `T${String(tables.length + 1).padStart(3, '0')}`,
-        branch_id: branch.id,
-        capacity: 6,
-        status: 'AVAILABLE',
-        location: 'Main Floor',
-      });
-    }
-    
-    // Extra large tables (8 seats)
-    for (let i = 1; i <= 2; i++) {
-      tables.push({
-        table_number: `T${String(tables.length + 1).padStart(3, '0')}`,
-        branch_id: branch.id,
-        capacity: 8,
-        status: 'AVAILABLE',
-        location: 'Private Room',
-      });
+  const layouts = [
+    { capacity: 2, count: 5, area: 'Window Side' },
+    { capacity: 4, count: 8, area: 'Main Hall' },
+    { capacity: 6, count: 4, area: 'Main Hall' },
+    { capacity: 8, count: 2, area: 'Private Room' },
+  ];
+
+  let seeded = 0;
+
+  for (const branch of branches) {
+    let seq = 1;
+    for (const layout of layouts) {
+      for (let i = 0; i < layout.count; i++) {
+        const tableNumber = `${branch.code}-T${String(seq).padStart(2, '0')}`;
+        seq += 1;
+
+        const exists = await tableRepo.findOne({
+          where: {
+            table_number: tableNumber,
+            branch_id: branch.id,
+          },
+        });
+        if (exists) continue;
+
+        const table = tableRepo.create({
+          name: `Table ${tableNumber}`,
+          table_number: tableNumber,
+          branch_id: branch.id,
+          capacity: layout.capacity,
+          table_type: tableTypeForCapacity(layout.capacity),
+          table_status: TableStatus.AVAILABLE,
+          dining_area: layout.area,
+          sort_order: seq,
+          is_active: true,
+          status: 'active',
+        });
+        await tableRepo.save(table);
+        seeded += 1;
+        console.log(`✅ Table seeded: ${table.table_number} (${branch.name})`);
+      }
     }
   }
 
-  for (const tableData of tables) {
-    const exists = await tableRepo.findOne({
-      where: { 
-        table_number: tableData.table_number,
-        branch_id: tableData.branch_id 
-      },
-    });
-    if (!exists) {
-      const table = tableRepo.create(tableData);
-      await tableRepo.save(table);
-      console.log(`✅ Table seeded: ${table.table_number}`);
-    }
-  }
+  console.log(`✅ Tables seed done — ${seeded} new table(s) across ${branches.length} branch(es)`);
 }

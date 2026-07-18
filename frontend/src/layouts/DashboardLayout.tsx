@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { Header } from '@/components/layout/Header';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { useSelector } from 'react-redux';
 import { selectSidebarOpen, selectSidebarCollapsed } from '@/store/slices/uiSlice';
 import { cn } from '@/utils/cn';
@@ -22,7 +23,9 @@ const DashboardLayout = () => {
         <Header />
         
         <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 dark:bg-gray-900">
-          <Outlet />
+          <ErrorBoundary>
+            <Outlet />
+          </ErrorBoundary>
         </main>
       </div>
     </div>

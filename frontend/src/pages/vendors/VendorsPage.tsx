@@ -191,7 +191,7 @@ const VendorsPage: React.FC = () => {
             ? 'text-red-600 dark:text-red-400'
             : 'text-green-600 dark:text-green-400'
         )}>
-          ${row.original.current_balance.toFixed(2)}
+          ${Number(row.original.current_balance || 0).toFixed(2)}
         </span>
       ),
     },

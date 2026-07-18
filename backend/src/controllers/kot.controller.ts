@@ -1,13 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { KOTService } from '../services/kot.service';
-import { KOTStatus } from '../dto/kot/UpdateKOTDto';
 
 export class KOTController {
   private kotService = new KOTService();
 
   create = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const kot = await this.kotService.create(req.body);
+      const waiterId = (req as any).user?.userId;
+      const kot = await this.kotService.create({ ...req.body, waiterId });
       res.status(201).json({
         success: true,
         message: 'KOT created successfully',
@@ -20,11 +20,13 @@ export class KOTController {
 
   findAll = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { orderId, kitchenId, status } = req.query;
+      const { orderId, kitchenId, status, branchId, activeOnly } = req.query;
       const kots = await this.kotService.findAll({
         orderId: orderId as string,
         kitchenId: kitchenId as string,
-        status: status as KOTStatus,
+        status: status as string,
+        branchId: branchId as string,
+        activeOnly: activeOnly === 'true',
       });
       res.status(200).json({
         success: true,
@@ -58,7 +60,7 @@ export class KOTController {
     try {
       const { id } = req.params;
       const { status } = req.body;
-      const kot = await this.kotService.changeStatus(id, status as KOTStatus);
+      const kot = await this.kotService.changeStatus(id, status);
       res.status(200).json({
         success: true,
         message: 'KOT status updated successfully',
@@ -77,6 +79,20 @@ export class KOTController {
         success: true,
         message: 'KOT completed successfully',
         data: kot,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  printKOT = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const result = await this.kotService.printKOT(id);
+      res.status(200).json({
+        success: true,
+        message: 'KOT print payload generated',
+        data: result,
       });
     } catch (error) {
       next(error);

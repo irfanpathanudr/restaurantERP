@@ -94,10 +94,36 @@ class App {
     // Security middleware
     this.app.use(helmet());
     
-    // CORS configuration
+    // CORS — allow localhost + LAN IPs (needed for mobile on same Wi‑Fi)
+    const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000,http://localhost:3001')
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean);
+
+    const isDev = process.env.NODE_ENV !== 'production';
+    const isPrivateLan = (origin: string) =>
+      /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[0-1])\.\d{1,3}\.\d{1,3})(:\d+)?$/i.test(
+        origin
+      );
+
     this.app.use(
       cors({
-        origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+        origin: (origin, callback) => {
+          if (!origin) {
+            callback(null, true);
+            return;
+          }
+          if (corsOrigins.includes('*') || corsOrigins.includes(origin)) {
+            callback(null, true);
+            return;
+          }
+          // In development, allow phone/tablet on the same Wi‑Fi
+          if (isDev && isPrivateLan(origin)) {
+            callback(null, true);
+            return;
+          }
+          callback(null, false);
+        },
         credentials: true,
         optionsSuccessStatus: 200,
       })

@@ -28,6 +28,11 @@ export enum PaymentStatus {
   REFUNDED = 'refunded',
 }
 
+export enum DiscountType {
+  PERCENTAGE = 'percentage',
+  FIXED = 'fixed',
+}
+
 @Entity('orders')
 export class Order extends BaseEntity {
   @Column({ type: 'varchar', length: 50, unique: true })
@@ -83,6 +88,16 @@ export class Order extends BaseEntity {
 
   @Column({ type: 'decimal', precision: 5, scale: 2, default: 0 })
   discount_percentage: number;
+
+  @Column({
+    type: 'enum',
+    enum: DiscountType,
+    nullable: true,
+  })
+  discount_type: DiscountType | null;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  discount_reason: string | null;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   coupon_code: string | null;
@@ -140,6 +155,12 @@ export class Order extends BaseEntity {
 
   @Column({ type: 'timestamp', nullable: true })
   cancelled_at: Date | null;
+
+  @Column({ type: 'timestamp', nullable: true })
+  cashier_confirmed_at: Date | null;
+
+  @Column({ type: 'boolean', default: false })
+  is_locked: boolean;
 
   @OneToMany(() => OrderItem, (orderItem) => orderItem.order, { cascade: true })
   order_items: OrderItem[];

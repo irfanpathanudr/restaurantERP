@@ -19,16 +19,63 @@ export class MenuItemController {
 
   findAll = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const { branchId, categoryId, type, isAvailable } = req.query;
+      const { branchId, categoryId, type, isAvailable, search } = req.query;
       const menuItems = await this.menuItemService.findAll({
-        branchId: branchId as string,
-        categoryId: categoryId as string,
-        type: type as string,
-        isAvailable: isAvailable === 'true',
+        branchId: branchId as string | undefined,
+        categoryId: categoryId as string | undefined,
+        type: type as string | undefined,
+        isAvailable:
+          typeof isAvailable === 'string' ? isAvailable === 'true' : undefined,
+        search: search as string | undefined,
       });
       res.status(200).json({
         success: true,
         message: 'Menu items retrieved successfully',
+        data: menuItems,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  search = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { q, categoryId, foodType, isAvailable } = req.query;
+      
+      if (!q || typeof q !== 'string' || q.trim().length === 0) {
+        res.status(400).json({
+          success: false,
+          message: 'Search query is required',
+        });
+        return;
+      }
+
+      const menuItems = await this.menuItemService.searchMenuItems(q, {
+        categoryId: categoryId as string | undefined,
+        foodType: foodType as string | undefined,
+        isAvailable: typeof isAvailable === 'string' ? isAvailable === 'true' : undefined,
+      });
+
+      res.status(200).json({
+        success: true,
+        message: `Found ${menuItems.length} menu items`,
+        data: menuItems,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getWithImages = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { categoryId, isAvailable } = req.query;
+      const menuItems = await this.menuItemService.getMenuItemsWithImages({
+        categoryId: categoryId as string | undefined,
+        isAvailable: typeof isAvailable === 'string' ? isAvailable === 'true' : undefined,
+      });
+      res.status(200).json({
+        success: true,
+        message: 'Menu items with images retrieved successfully',
         data: menuItems,
       });
     } catch (error) {

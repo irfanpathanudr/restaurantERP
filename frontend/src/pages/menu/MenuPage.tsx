@@ -15,15 +15,15 @@ interface MenuItem {
   name: string;
   sku: string;
   description: string;
-  price: number;
-  cost_price: number;
+  price: number | string;
+  cost_price: number | string;
   category_id: string;
   image_url?: string;
   is_available: boolean;
   preparation_time: number;
   is_vegetarian: boolean;
   is_vegan: boolean;
-  allergens?: string;
+  allergens?: string | string[];
   category?: {
     id: string;
     name: string;
@@ -50,6 +50,7 @@ const MenuPage: React.FC = () => {
     price: '',
     cost_price: '',
     category_id: '',
+    image_url: '',
     preparation_time: '',
     is_vegetarian: false,
     is_vegan: false,
@@ -92,6 +93,7 @@ const MenuPage: React.FC = () => {
       price: '',
       cost_price: '',
       category_id: '',
+      image_url: '',
       preparation_time: '',
       is_vegetarian: false,
       is_vegan: false,
@@ -105,14 +107,17 @@ const MenuPage: React.FC = () => {
     setFormData({
       name: item.name,
       sku: item.sku,
-      description: item.description,
-      price: item.price.toString(),
-      cost_price: item.cost_price?.toString() || '',
+      description: item.description || '',
+      price: String(item.price ?? ''),
+      cost_price: item.cost_price != null ? String(item.cost_price) : '',
       category_id: item.category_id,
-      preparation_time: item.preparation_time?.toString() || '',
-      is_vegetarian: item.is_vegetarian,
-      is_vegan: item.is_vegan,
-      allergens: item.allergens || '',
+      image_url: item.image_url || '',
+      preparation_time: item.preparation_time != null ? String(item.preparation_time) : '',
+      is_vegetarian: Boolean(item.is_vegetarian),
+      is_vegan: Boolean(item.is_vegan),
+      allergens: Array.isArray(item.allergens)
+        ? item.allergens.join(', ')
+        : item.allergens || '',
     });
     setShowModal(true);
   };
@@ -142,6 +147,7 @@ const MenuPage: React.FC = () => {
         price: parseFloat(formData.price),
         cost_price: formData.cost_price ? parseFloat(formData.cost_price) : undefined,
         category_id: formData.category_id,
+        image_url: formData.image_url || undefined,
         preparation_time: formData.preparation_time ? parseInt(formData.preparation_time) : undefined,
         is_vegetarian: formData.is_vegetarian,
         is_vegan: formData.is_vegan,
@@ -176,6 +182,25 @@ const MenuPage: React.FC = () => {
 
   const columns: ColumnDef<MenuItem>[] = [
     {
+      accessorKey: 'image',
+      header: 'Image',
+      cell: ({ row }) => (
+        <div className="w-12 h-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700">
+          {row.original.image_url ? (
+            <img
+              src={row.original.image_url}
+              alt={row.original.name}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-gray-400">
+              <span className="text-xs">No image</span>
+            </div>
+          )}
+        </div>
+      ),
+    },
+    {
       accessorKey: 'sku',
       header: 'SKU',
       cell: ({ row }) => (
@@ -200,7 +225,9 @@ const MenuPage: React.FC = () => {
       accessorKey: 'price',
       header: 'Price',
       cell: ({ row }) => (
-        <span className="font-medium">${row.original.price.toFixed(2)}</span>
+        <span className="font-medium">
+          ${Number(row.original.price || 0).toFixed(2)}
+        </span>
       ),
     },
     {
@@ -350,6 +377,32 @@ const MenuPage: React.FC = () => {
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Image URL
+            </label>
+            <input
+              type="url"
+              value={formData.image_url}
+              onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+              placeholder="https://example.com/image.jpg"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            />
+            {formData.image_url && (
+              <div className="mt-2">
+                <img
+                  src={formData.image_url}
+                  alt="Preview"
+                  className="w-32 h-32 object-cover rounded-lg border border-gray-300 dark:border-gray-600"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '';
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-3 gap-4">

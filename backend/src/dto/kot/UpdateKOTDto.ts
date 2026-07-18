@@ -1,14 +1,14 @@
-import { IsOptional, IsEnum } from 'class-validator';
+import { IsOptional, IsEnum, IsString } from 'class-validator';
+import { KOTStatus } from '../../database/entities/KOT.entity';
 
-export enum KOTStatus {
-  PENDING = 'pending',
-  PREPARING = 'preparing',
-  READY = 'ready',
-  SERVED = 'served',
-}
+export { KOTStatus };
 
 export class UpdateKOTDto {
   @IsOptional()
   @IsEnum(KOTStatus)
   status?: KOTStatus;
+
+  @IsOptional()
+  @IsString()
+  cancellationReason?: string;
 }

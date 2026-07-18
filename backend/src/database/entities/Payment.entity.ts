@@ -11,6 +11,12 @@ export enum PaymentMethod {
   BANK_TRANSFER = 'bank_transfer',
 }
 
+export enum PaymentMode {
+  CASH = 'cash',
+  ONLINE = 'online',
+  CARD = 'card',
+}
+
 export enum PaymentGateway {
   RAZORPAY = 'razorpay',
   PAYTM = 'paytm',
@@ -65,4 +71,17 @@ export class Payment extends BaseEntity {
 
   @Column({ type: 'varchar', length: 36, nullable: true })
   processed_by: string | null;
+
+  @Column({
+    type: 'enum',
+    enum: PaymentMode,
+    default: PaymentMode.CASH,
+  })
+  payment_mode: PaymentMode;
+
+  @Column({ type: 'boolean', default: false })
+  is_split_payment: boolean;
+
+  @Column({ type: 'int', default: 1 })
+  payment_sequence: number;
 }

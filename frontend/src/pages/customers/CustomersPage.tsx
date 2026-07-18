@@ -208,7 +208,7 @@ const CustomersPage: React.FC = () => {
       accessorKey: 'wallet_balance',
       header: 'Wallet',
       cell: ({ row }) => (
-        <span className="font-medium">${row.original.wallet_balance.toFixed(2)}</span>
+        <span className="font-medium">${Number(row.original.wallet_balance || 0).toFixed(2)}</span>
       ),
     },
     {
@@ -220,7 +220,7 @@ const CustomersPage: React.FC = () => {
       accessorKey: 'lifetime_value',
       header: 'Lifetime Value',
       cell: ({ row }) => (
-        <span className="font-medium">${row.original.lifetime_value.toFixed(2)}</span>
+        <span className="font-medium">${Number(row.original.lifetime_value || 0).toFixed(2)}</span>
       ),
     },
     {

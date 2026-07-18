@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
-import { ColumnDef } from '@tantml/react-table';
+import { ColumnDef } from '@tanstack/react-table';
 import { setPageTitle } from '@/store/slices/uiSlice';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/common/Button';

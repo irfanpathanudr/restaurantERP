@@ -30,7 +30,7 @@ export class BranchService {
         .orderBy('branch.created_at', 'DESC');
 
       if (restaurantId) {
-        queryBuilder.where('branch.restaurantId = :restaurantId', { restaurantId });
+        queryBuilder.where('branch.restaurant_id = :restaurantId', { restaurantId });
       }
 
       const branches = await queryBuilder.getMany();

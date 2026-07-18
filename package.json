@@ -5,15 +5,19 @@
   "private": true,
   "workspaces": [
     "backend",
-    "frontend"
+    "frontend",
+    "kot"
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:kot\"",
     "dev:backend": "npm run dev --workspace=backend",
     "dev:frontend": "npm run dev --workspace=frontend",
+    "dev:kot": "npm run dev --workspace=kot",
     "build": "npm run build --workspaces",
     "build:backend": "npm run build --workspace=backend",
     "build:frontend": "npm run build --workspace=frontend",
+    "build:kot": "npm run build --workspace=kot",
     "test": "npm run test --workspaces",
     "lint": "npm run lint --workspaces",
     "docker:up": "docker-compose up -d",

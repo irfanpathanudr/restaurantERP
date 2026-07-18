@@ -73,7 +73,7 @@ const PaymentsPage = () => {
       header: 'Amount',
       cell: ({ row }) => (
         <span className="font-medium text-green-600 dark:text-green-400">
-          ${row.original.amount.toFixed(2)}
+          ${Number(row.original.amount || 0).toFixed(2)}
         </span>
       ),
     },

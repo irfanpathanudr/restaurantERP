@@ -29,10 +29,12 @@ AppDataSource.initialize()
       throw error;
     }
     
-    // Start server
-    appInstance.app.listen(PORT, () => {
+    // Bind 0.0.0.0 so phones on the same Wi‑Fi can call the API
+    appInstance.app.listen(Number(PORT), '0.0.0.0', () => {
       logger.info(`Server is running on port ${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info(`Local:   http://localhost:${PORT}`);
+      logger.info(`Network: use http://YOUR_LAN_IP:${PORT} from mobile`);
       logger.info(`Health check: http://localhost:${PORT}/health`);
     });
   })

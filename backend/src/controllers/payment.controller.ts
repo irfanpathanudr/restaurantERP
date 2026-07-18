@@ -69,4 +69,31 @@ export class PaymentController {
       next(error);
     }
   };
+
+  processSplitPayment = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const result = await this.paymentService.processSplitPayment(req.body);
+      res.status(201).json({
+        success: true,
+        message: 'Split payment processed successfully',
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getOrderPayments = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { orderId } = req.params;
+      const payments = await this.paymentService.getOrderPayments(orderId);
+      res.status(200).json({
+        success: true,
+        message: 'Order payments retrieved successfully',
+        data: payments,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }

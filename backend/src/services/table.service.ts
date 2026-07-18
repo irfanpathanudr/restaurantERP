@@ -1,9 +1,8 @@
 import AppDataSource from '../config/database';
-import { Table } from '../database/entities/Table.entity';
+import { Table, TableStatus } from '../database/entities/Table.entity';
 import { CreateTableDto } from '../dto/table/CreateTableDto';
 import { UpdateTableDto } from '../dto/table/UpdateTableDto';
 import logger from '../config/logger';
-import QRCode from 'qrcode';
 import { Repository } from 'typeorm';
 
 export class TableService {
@@ -11,16 +10,20 @@ export class TableService {
     return AppDataSource.getRepository(Table);
   }
 
-  async create(data: CreateTableDto): Promise<Table> {
+  async create(data: CreateTableDto | Record<string, any>): Promise<Table> {
     try {
-      // Generate QR code for the table
-      const qrCodeUrl = `${process.env.APP_URL}/tables/${data.branchId}/${data.tableNumber}`;
-      const qrCode = await QRCode.toDataURL(qrCodeUrl);
+      const payload = {
+        name: data.name || data.tableNumber || data.table_number,
+        table_number: data.table_number || data.tableNumber,
+        branch_id: data.branch_id || data.branchId,
+        table_type: data.table_type || data.tableType,
+        capacity: data.capacity,
+        table_status: data.table_status || data.status || TableStatus.AVAILABLE,
+        shape: data.shape,
+        dining_area: data.dining_area || data.location || null,
+      };
 
-      const table = this.tableRepository.create({
-        ...data,
-        qrCode,
-      });
+      const table = this.tableRepository.create(payload);
       await this.tableRepository.save(table);
       logger.info(`Table created: ${table.id}`);
       return table;
@@ -32,16 +35,18 @@ export class TableService {
 
   async findAll(filters?: { branchId?: string; status?: string }): Promise<Table[]> {
     try {
-      const query = this.tableRepository.createQueryBuilder('table')
+      const query = this.tableRepository
+        .createQueryBuilder('table')
         .leftJoinAndSelect('table.branch', 'branch')
-        .orderBy('table.tableNumber', 'ASC');
+        .where('table.deleted_at IS NULL')
+        .orderBy('table.table_number', 'ASC');
 
       if (filters?.branchId) {
-        query.where('table.branchId = :branchId', { branchId: filters.branchId });
+        query.andWhere('table.branch_id = :branchId', { branchId: filters.branchId });
       }
 
       if (filters?.status) {
-        query.andWhere('table.status = :status', { status: filters.status });
+        query.andWhere('table.table_status = :status', { status: filters.status });
       }
 
       return await query.getMany();
@@ -55,7 +60,7 @@ export class TableService {
     try {
       return await this.tableRepository.findOne({
         where: { id },
-        relations: ['branch', 'orders'],
+        relations: ['branch'],
       });
     } catch (error) {
       logger.error(`Error fetching table ${id}:`, error);
@@ -63,12 +68,18 @@ export class TableService {
     }
   }
 
-  async update(id: string, data: UpdateTableDto): Promise<Table> {
+  async update(id: string, data: UpdateTableDto | Record<string, any>): Promise<Table> {
     try {
       const table = await this.tableRepository.findOne({ where: { id } });
       if (!table) throw new Error('Table not found');
 
-      Object.assign(table, data);
+      const payload: Record<string, any> = { ...data };
+      if (data.tableNumber !== undefined) payload.table_number = data.tableNumber;
+      if (data.branchId !== undefined) payload.branch_id = data.branchId;
+      if (data.status !== undefined) payload.table_status = data.status;
+      if (data.location !== undefined) payload.dining_area = data.location;
+
+      Object.assign(table, payload);
       await this.tableRepository.save(table);
       logger.info(`Table updated: ${id}`);
       return table;
@@ -96,7 +107,7 @@ export class TableService {
       const table = await this.tableRepository.findOne({ where: { id } });
       if (!table) throw new Error('Table not found');
 
-      table.status = status;
+      table.table_status = status as TableStatus;
       await this.tableRepository.save(table);
       logger.info(`Table status changed: ${id} -> ${status}`);
       return table;

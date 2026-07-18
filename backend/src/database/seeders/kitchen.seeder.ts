@@ -6,47 +6,41 @@ export async function seedKitchens(dataSource: DataSource): Promise<void> {
   const kitchenRepo = dataSource.getRepository(Kitchen);
   const branchRepo = dataSource.getRepository(Branch);
 
-  const branches = await branchRepo.find();
+  const branches = await branchRepo.find({ order: { code: 'ASC' } });
   if (branches.length === 0) {
     console.log('⚠️ Branches not found. Please seed branches first.');
     return;
   }
 
-  const kitchens = [
-    {
-      name: 'Main Kitchen',
-      code: 'KIT001',
-      branch_id: branches[0].id,
-      is_active: true,
-    },
-    {
-      name: 'Dessert Station',
-      code: 'KIT002',
-      branch_id: branches[0].id,
-      is_active: true,
-    },
-    {
-      name: 'Beverage Station',
-      code: 'KIT003',
-      branch_id: branches[0].id,
-      is_active: true,
-    },
-    {
-      name: 'Main Kitchen - Floor 2',
-      code: 'KIT004',
-      branch_id: branches[1]?.id || branches[0].id,
-      is_active: true,
-    },
+  const templates = [
+    { name: 'Main Kitchen', codeSuffix: 'MAIN', location: 'Back of house' },
+    { name: 'Tandoor / Grill', codeSuffix: 'GRILL', location: 'Hot line' },
+    { name: 'Beverage Station', codeSuffix: 'BEV', location: 'Bar' },
   ];
 
-  for (const kitchenData of kitchens) {
-    const exists = await kitchenRepo.findOne({
-      where: { code: kitchenData.code },
-    });
-    if (!exists) {
-      const kitchen = kitchenRepo.create(kitchenData);
+  let seeded = 0;
+
+  for (const branch of branches) {
+    for (const tmpl of templates) {
+      const code = `${branch.code}-${tmpl.codeSuffix}`;
+      const exists = await kitchenRepo.findOne({ where: { code } });
+      if (exists) continue;
+
+      const kitchen = kitchenRepo.create({
+        name: `${tmpl.name} (${branch.name})`,
+        code,
+        branch_id: branch.id,
+        location: tmpl.location,
+        description: `${tmpl.name} for ${branch.name}`,
+        is_active: true,
+        status: 'active',
+        sort_order: seeded,
+      });
       await kitchenRepo.save(kitchen);
+      seeded += 1;
       console.log(`✅ Kitchen seeded: ${kitchen.name}`);
     }
   }
+
+  console.log(`✅ Kitchens seed done — ${seeded} new kitchen(s)`);
 }

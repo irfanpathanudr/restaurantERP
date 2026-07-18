@@ -52,6 +52,12 @@ export const seedPermissions = async () => {
     { name: 'kot.create', code: 'kot.create', module: 'kot', action: 'create', description: 'Create KOT' },
     { name: 'kot.update', code: 'kot.update', module: 'kot', action: 'update', description: 'Update KOT' },
 
+    // Kitchens
+    { name: 'kitchens.read', code: 'kitchens.read', module: 'kitchens', action: 'read', description: 'View kitchens' },
+    { name: 'kitchens.create', code: 'kitchens.create', module: 'kitchens', action: 'create', description: 'Create kitchens' },
+    { name: 'kitchens.update', code: 'kitchens.update', module: 'kitchens', action: 'update', description: 'Update kitchens' },
+    { name: 'kitchens.delete', code: 'kitchens.delete', module: 'kitchens', action: 'delete', description: 'Delete kitchens' },
+
     // Tables
     { name: 'tables.read', code: 'tables.read', module: 'tables', action: 'read', description: 'View tables' },
     { name: 'tables.create', code: 'tables.create', module: 'tables', action: 'create', description: 'Create tables' },

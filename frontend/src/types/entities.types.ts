@@ -207,17 +207,35 @@ export interface Category extends BaseEntity {
 export interface MenuItem extends BaseEntity {
   name: string;
   sku: string;
-  description?: string;
+  description?: string | null;
   price: number;
-  cost_price?: number;
+  cost_price?: number | null;
   category_id: string;
-  image_url?: string;
+  food_type: 'veg' | 'non_veg' | 'egg' | 'jain';
+  spicy_level?: 'none' | 'mild' | 'medium' | 'hot' | 'extra_hot';
+  portion_size?: 'small' | 'medium' | 'large' | 'custom';
+  preparation_time?: number | null;
+  image?: string | null;
+  gallery?: string[] | null;
+  barcode?: string | null;
+  qr_code?: string | null;
+  nutritional_values?: any;
+  allergens?: string[] | null;
   is_available: boolean;
-  preparation_time?: number;
-  is_vegetarian: boolean;
-  is_vegan: boolean;
-  allergens?: string;
+  is_combo?: boolean;
+  combo_items?: any[] | null;
+  variants?: any[] | null;
+  add_ons?: any[] | null;
+  modifiers?: any[] | null;
+  dynamic_pricing?: any;
+  seasonal_price_start?: Date | null;
+  seasonal_price_end?: Date | null;
+  seasonal_price?: number | null;
+  printer_id?: string | null;
+  sort_order?: number;
+  total_sold?: number;
   category?: Category;
+  kitchens?: any[];
   recipe?: Recipe;
 }
 

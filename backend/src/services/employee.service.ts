@@ -37,7 +37,7 @@ export class EmployeeService {
         .orderBy('employee.first_name', 'ASC');
 
       if (filters?.branchId) {
-        query.andWhere('employee.branchId = :branchId', { branchId: filters.branchId });
+        query.andWhere('employee.branch_id = :branchId', { branchId: filters.branchId });
       }
 
       if (filters?.status) {
@@ -101,14 +101,14 @@ export class EmployeeService {
       const endDate = new Date(year, month, 0);
 
       const attendance = await this.attendanceRepository.createQueryBuilder('attendance')
-        .where('attendance.employeeId = :employeeId', { employeeId })
-        .andWhere('attendance.date BETWEEN :startDate AND :endDate', { startDate, endDate })
-        .orderBy('attendance.date', 'ASC')
+        .where('attendance.employee_id = :employeeId', { employeeId })
+        .andWhere('attendance.attendance_date BETWEEN :startDate AND :endDate', { startDate, endDate })
+        .orderBy('attendance.attendance_date', 'ASC')
         .getMany();
 
-      const presentDays = attendance.filter(a => a.status === 'present').length;
-      const absentDays = attendance.filter(a => a.status === 'absent').length;
-      const leaveDays = attendance.filter(a => a.status === 'leave').length;
+      const presentDays = attendance.filter(a => a.attendance_status === 'present').length;
+      const absentDays = attendance.filter(a => a.attendance_status === 'absent').length;
+      const leaveDays = attendance.filter(a => a.attendance_status === 'leave').length;
 
       return {
         month,

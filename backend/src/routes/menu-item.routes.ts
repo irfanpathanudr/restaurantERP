@@ -11,6 +11,8 @@ const menuItemController = new MenuItemController();
 
 router.use(authenticate);
 
+router.get('/search', checkPermission('menu.read'), menuItemController.search);
+router.get('/with-images', checkPermission('menu.read'), menuItemController.getWithImages);
 router.get('/', checkPermission('menu.read'), menuItemController.findAll);
 router.get('/:id', checkPermission('menu.read'), menuItemController.findById);
 router.post('/', checkPermission('menu.create'), validateDTO(CreateMenuItemDto), menuItemController.create);

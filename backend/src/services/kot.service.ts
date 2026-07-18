@@ -1,30 +1,88 @@
 import AppDataSource from '../config/database';
-import { KOT } from '../database/entities/KOT.entity';
+import { KOT, KOTStatus, KOTPriority } from '../database/entities/KOT.entity';
+import { Order } from '../database/entities/Order.entity';
+import { MenuItem } from '../database/entities/MenuItem.entity';
 import { CreateKOTDto } from '../dto/kot/CreateKOTDto';
-import { KOTStatus } from '../dto/kot/UpdateKOTDto';
 import logger from '../config/logger';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
+
+const STATUS_ALIASES: Record<string, KOTStatus> = {
+  pending: KOTStatus.PENDING,
+  preparing: KOTStatus.IN_PROGRESS,
+  in_progress: KOTStatus.IN_PROGRESS,
+  ready: KOTStatus.READY,
+  served: KOTStatus.SERVED,
+  cancelled: KOTStatus.CANCELLED,
+};
 
 export class KOTService {
   private get kotRepository(): Repository<KOT> {
     return AppDataSource.getRepository(KOT);
   }
 
-  async create(data: CreateKOTDto): Promise<KOT> {
+  private get orderRepository(): Repository<Order> {
+    return AppDataSource.getRepository(Order);
+  }
+
+  private get menuItemRepository(): Repository<MenuItem> {
+    return AppDataSource.getRepository(MenuItem);
+  }
+
+  private normalizeStatus(status: string): KOTStatus {
+    const normalized = STATUS_ALIASES[String(status).toLowerCase()];
+    if (!normalized) {
+      throw new Error(`Invalid KOT status: ${status}`);
+    }
+    return normalized;
+  }
+
+  private async enrichItems(items: CreateKOTDto['items']) {
+    const menuIds = items.map((i) => i.menuItemId);
+    const menuItems = await this.menuItemRepository.find({
+      where: { id: In(menuIds) },
+    });
+    const byId = new Map(menuItems.map((m) => [m.id, m]));
+
+    return items.map((item) => {
+      const menu = byId.get(item.menuItemId);
+      return {
+        menu_item_id: item.menuItemId,
+        menuItemId: item.menuItemId,
+        name: menu?.name || 'Unknown item',
+        quantity: item.quantity,
+        special_instructions: item.specialInstructions || null,
+        specialInstructions: item.specialInstructions || null,
+        price: menu ? Number(menu.price) : 0,
+      };
+    });
+  }
+
+  async create(data: CreateKOTDto & { waiterId?: string; priority?: KOTPriority }): Promise<KOT> {
     try {
-      // Generate KOT number
+      const order = await this.orderRepository.findOne({
+        where: { id: data.orderId },
+        relations: ['table'],
+      });
+      if (!order) throw new Error('Order not found');
+
+      const enrichedItems = await this.enrichItems(data.items);
       const kotNumber = `KOT-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
 
       const kot = this.kotRepository.create({
-        ...data,
-        kotNumber,
-        status: KOTStatus.PENDING,
-        items: JSON.stringify(data.items),
+        kot_number: kotNumber,
+        order_id: data.orderId,
+        kitchen_id: data.kitchenId,
+        kot_status: KOTStatus.PENDING,
+        priority: data.priority || KOTPriority.NORMAL,
+        items: enrichedItems,
+        waiter_id: data.waiterId || order.waiter_id || null,
+        special_instructions: data.notes || null,
+        print_count: 0,
       });
 
       await this.kotRepository.save(kot);
       logger.info(`KOT created: ${kot.id}`);
-      return kot;
+      return (await this.findById(kot.id)) as KOT;
     } catch (error) {
       logger.error('Error creating KOT:', error);
       throw error;
@@ -34,24 +92,41 @@ export class KOTService {
   async findAll(filters?: {
     orderId?: string;
     kitchenId?: string;
-    status?: KOTStatus;
+    status?: string;
+    branchId?: string;
+    activeOnly?: boolean;
   }): Promise<KOT[]> {
     try {
-      const query = this.kotRepository.createQueryBuilder('kot')
+      const query = this.kotRepository
+        .createQueryBuilder('kot')
         .leftJoinAndSelect('kot.order', 'order')
+        .leftJoinAndSelect('order.table', 'table')
         .leftJoinAndSelect('kot.kitchen', 'kitchen')
+        .where('kot.deleted_at IS NULL')
         .orderBy('kot.created_at', 'DESC');
 
       if (filters?.orderId) {
-        query.andWhere('kot.orderId = :orderId', { orderId: filters.orderId });
+        query.andWhere('kot.order_id = :orderId', { orderId: filters.orderId });
       }
 
       if (filters?.kitchenId) {
-        query.andWhere('kot.kitchenId = :kitchenId', { kitchenId: filters.kitchenId });
+        query.andWhere('kot.kitchen_id = :kitchenId', { kitchenId: filters.kitchenId });
       }
 
       if (filters?.status) {
-        query.andWhere('kot.status = :status', { status: filters.status });
+        query.andWhere('kot.kot_status = :status', {
+          status: this.normalizeStatus(filters.status),
+        });
+      }
+
+      if (filters?.branchId) {
+        query.andWhere('order.branch_id = :branchId', { branchId: filters.branchId });
+      }
+
+      if (filters?.activeOnly) {
+        query.andWhere('kot.kot_status IN (:...active)', {
+          active: [KOTStatus.PENDING, KOTStatus.IN_PROGRESS, KOTStatus.READY],
+        });
       }
 
       return await query.getMany();
@@ -65,7 +140,7 @@ export class KOTService {
     try {
       return await this.kotRepository.findOne({
         where: { id },
-        relations: ['order', 'kitchen'],
+        relations: ['order', 'order.table', 'kitchen'],
       });
     } catch (error) {
       logger.error(`Error fetching KOT ${id}:`, error);
@@ -73,24 +148,32 @@ export class KOTService {
     }
   }
 
-  async changeStatus(id: string, status: KOTStatus): Promise<KOT> {
+  async changeStatus(id: string, status: string): Promise<KOT> {
     try {
       const kot = await this.kotRepository.findOne({ where: { id } });
       if (!kot) throw new Error('KOT not found');
 
-      kot.status = status;
-      
-      if (status === KOTStatus.PREPARING && !kot.preparedAt) {
-        kot.preparedAt = new Date();
-      } else if (status === KOTStatus.READY && !kot.readyAt) {
-        kot.readyAt = new Date();
-      } else if (status === KOTStatus.SERVED && !kot.servedAt) {
-        kot.servedAt = new Date();
+      const nextStatus = this.normalizeStatus(status);
+      kot.kot_status = nextStatus;
+
+      if (nextStatus === KOTStatus.IN_PROGRESS && !kot.started_at) {
+        kot.started_at = new Date();
+      } else if (nextStatus === KOTStatus.READY && !kot.ready_at) {
+        kot.ready_at = new Date();
+        if (kot.started_at) {
+          kot.preparation_time = Math.round(
+            (kot.ready_at.getTime() - kot.started_at.getTime()) / 60000
+          );
+        }
+      } else if (nextStatus === KOTStatus.SERVED && !kot.served_at) {
+        kot.served_at = new Date();
+      } else if (nextStatus === KOTStatus.CANCELLED && !kot.cancelled_at) {
+        kot.cancelled_at = new Date();
       }
 
       await this.kotRepository.save(kot);
-      logger.info(`KOT status changed: ${id} -> ${status}`);
-      return kot;
+      logger.info(`KOT status changed: ${id} -> ${nextStatus}`);
+      return (await this.findById(id)) as KOT;
     } catch (error) {
       logger.error(`Error changing KOT status ${id}:`, error);
       throw error;
@@ -98,10 +181,38 @@ export class KOTService {
   }
 
   async completeKOT(id: string): Promise<KOT> {
+    return this.changeStatus(id, KOTStatus.SERVED);
+  }
+
+  async printKOT(id: string): Promise<{ kot: KOT; printPayload: Record<string, unknown> }> {
     try {
-      return await this.changeStatus(id, KOTStatus.SERVED);
+      const kot = await this.findById(id);
+      if (!kot) throw new Error('KOT not found');
+
+      kot.print_count = (kot.print_count || 0) + 1;
+      await this.kotRepository.save(kot);
+
+      const tableNumber = kot.order?.table?.table_number || 'N/A';
+      const printPayload = {
+        kotNumber: kot.kot_number,
+        printCount: kot.print_count,
+        isReprint: kot.print_count > 1,
+        tableNumber,
+        kitchen: kot.kitchen?.name || '',
+        status: kot.kot_status,
+        orderedAt: kot.created_at,
+        specialInstructions: kot.special_instructions,
+        items: (kot.items || []).map((item: any) => ({
+          name: item.name || item.item_name || 'Item',
+          quantity: item.quantity,
+          specialInstructions: item.special_instructions || item.specialInstructions || null,
+        })),
+      };
+
+      logger.info(`KOT printed: ${id} (count=${kot.print_count})`);
+      return { kot: (await this.findById(id)) as KOT, printPayload };
     } catch (error) {
-      logger.error(`Error completing KOT ${id}:`, error);
+      logger.error(`Error printing KOT ${id}:`, error);
       throw error;
     }
   }

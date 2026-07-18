@@ -27,13 +27,15 @@ export class MenuItemService {
     categoryId?: string;
     type?: string;
     isAvailable?: boolean;
+    search?: string;
   }): Promise<MenuItem[]> {
     try {
       const query = this.menuItemRepository.createQueryBuilder('menuItem')
         .leftJoinAndSelect('menuItem.category', 'category')
         .leftJoinAndSelect('menuItem.kitchens', 'kitchens')
         .where('menuItem.deleted_at IS NULL')
-        .orderBy('menuItem.name', 'ASC');
+        .orderBy('menuItem.sort_order', 'ASC')
+        .addOrderBy('menuItem.name', 'ASC');
 
       if (filters?.categoryId) {
         query.andWhere('menuItem.category_id = :categoryId', { categoryId: filters.categoryId });
@@ -47,9 +49,79 @@ export class MenuItemService {
         query.andWhere('menuItem.is_available = :isAvailable', { isAvailable: filters.isAvailable });
       }
 
+      if (filters?.search) {
+        query.andWhere(
+          '(menuItem.name LIKE :search OR menuItem.description LIKE :search OR menuItem.sku LIKE :search OR category.name LIKE :search)',
+          { search: `%${filters.search}%` }
+        );
+      }
+
       return await query.getMany();
     } catch (error) {
       logger.error('Error fetching menu items:', error);
+      throw error;
+    }
+  }
+
+  async searchMenuItems(searchTerm: string, filters?: {
+    categoryId?: string;
+    foodType?: string;
+    isAvailable?: boolean;
+  }): Promise<MenuItem[]> {
+    try {
+      const query = this.menuItemRepository.createQueryBuilder('menuItem')
+        .leftJoinAndSelect('menuItem.category', 'category')
+        .leftJoinAndSelect('menuItem.kitchens', 'kitchens')
+        .where('menuItem.deleted_at IS NULL')
+        .andWhere(
+          '(menuItem.name LIKE :search OR menuItem.description LIKE :search OR menuItem.sku LIKE :search OR category.name LIKE :search)',
+          { search: `%${searchTerm}%` }
+        )
+        .orderBy('menuItem.name', 'ASC');
+
+      if (filters?.categoryId) {
+        query.andWhere('menuItem.category_id = :categoryId', { categoryId: filters.categoryId });
+      }
+
+      if (filters?.foodType) {
+        query.andWhere('menuItem.food_type = :foodType', { foodType: filters.foodType });
+      }
+
+      if (filters?.isAvailable !== undefined) {
+        query.andWhere('menuItem.is_available = :isAvailable', { isAvailable: filters.isAvailable });
+      }
+
+      return await query.getMany();
+    } catch (error) {
+      logger.error('Error searching menu items:', error);
+      throw error;
+    }
+  }
+
+  async getMenuItemsWithImages(filters?: {
+    categoryId?: string;
+    isAvailable?: boolean;
+  }): Promise<MenuItem[]> {
+    try {
+      const query = this.menuItemRepository.createQueryBuilder('menuItem')
+        .leftJoinAndSelect('menuItem.category', 'category')
+        .leftJoinAndSelect('menuItem.kitchens', 'kitchens')
+        .where('menuItem.deleted_at IS NULL')
+        .andWhere('menuItem.image IS NOT NULL')
+        .orderBy('menuItem.sort_order', 'ASC')
+        .addOrderBy('menuItem.name', 'ASC');
+
+      if (filters?.categoryId) {
+        query.andWhere('menuItem.category_id = :categoryId', { categoryId: filters.categoryId });
+      }
+
+      if (filters?.isAvailable !== undefined) {
+        query.andWhere('menuItem.is_available = :isAvailable', { isAvailable: filters.isAvailable });
+      }
+
+      return await query.getMany();
+    } catch (error) {
+      logger.error('Error fetching menu items with images:', error);
       throw error;
     }
   }

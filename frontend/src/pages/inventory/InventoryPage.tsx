@@ -234,7 +234,7 @@ const InventoryPage: React.FC = () => {
       accessorKey: 'cost_per_unit',
       header: 'Cost/Unit',
       cell: ({ row }) => (
-        <span className="font-medium">${row.original.cost_per_unit.toFixed(2)}</span>
+        <span className="font-medium">${Number(row.original.cost_per_unit || 0).toFixed(2)}</span>
       ),
     },
     {

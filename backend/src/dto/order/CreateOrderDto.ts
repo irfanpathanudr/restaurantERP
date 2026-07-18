@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsUUID, IsOptional, IsArray, ValidateNested, IsNumber, IsEnum, IsString } from 'class-validator';
+import { IsNotEmpty, IsUUID, IsOptional, IsArray, ValidateNested, IsNumber, IsEnum, IsString, IsBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export enum OrderType {
@@ -76,4 +76,12 @@ export class CreateOrderDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @IsOptional()
+  @IsUUID()
+  kitchenId?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  createKot?: boolean;
 }

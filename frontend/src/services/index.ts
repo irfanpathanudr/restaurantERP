@@ -1,6 +1,7 @@
 // Export all services from a central location
 export { authService } from './auth.service';
 export { apiService } from './api.service';
+export { menuService } from './menu.service';
 export { recipeService } from './recipe.service';
 export { vendorService } from './vendor.service';
 export { purchaseOrderService } from './purchase-order.service';

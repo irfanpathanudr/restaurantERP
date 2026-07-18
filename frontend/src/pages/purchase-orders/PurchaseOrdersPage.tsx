@@ -73,7 +73,7 @@ const PurchaseOrdersPage = () => {
       accessorKey: 'total_amount',
       header: 'Total Amount',
       cell: ({ row }) => (
-        <span className="font-medium">${row.original.total_amount.toFixed(2)}</span>
+        <span className="font-medium">${Number(row.original.total_amount || 0).toFixed(2)}</span>
       ),
     },
     {
