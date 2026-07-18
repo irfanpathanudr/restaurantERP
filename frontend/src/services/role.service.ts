@@ -1,5 +1,5 @@
 import { apiService } from './api.service';
-import { Role, Permission } from '@/types/entities.types';
+import { Role } from '@/types/entities.types';
 
 interface ApiResponse<T> {
   success: boolean;

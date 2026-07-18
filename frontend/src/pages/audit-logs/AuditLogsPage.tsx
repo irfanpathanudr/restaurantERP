@@ -88,7 +88,7 @@ const AuditLogsPage = () => {
     {
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }) => (
+      cell: ({ row }: { row: any }) => (
         <Button size="sm" variant="ghost" leftIcon={<Eye className="h-4 w-4" />}>
           Details
         </Button>

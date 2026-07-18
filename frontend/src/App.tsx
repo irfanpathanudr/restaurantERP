@@ -41,7 +41,7 @@ import RolesPage from './pages/roles/RolesPage';
 import PermissionsPage from './pages/permissions/PermissionsPage';
 
 // Placeholder component for pages under development
-const ComingSoon = ({ pageName }: { pageName: string }) => {
+const ComingSoon = ({ pageName }: { pageName: string }): JSX.Element => {
   return (
     <div className="flex items-center justify-center min-h-[60vh]">
       <div className="text-center">

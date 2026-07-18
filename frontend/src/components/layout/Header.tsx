@@ -14,13 +14,12 @@ import {
   ChevronDown,
   Building2,
 } from 'lucide-react';
-import { cn } from '@/utils/cn';
 import toast from 'react-hot-toast';
 
 export const Header: React.FC = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const sidebarOpen = useSelector(selectSidebarOpen);
+  // const sidebarOpen = useSelector(selectSidebarOpen);
   const pageTitle = useSelector(selectPageTitle);
   const user = useSelector(selectUser);
   const [showUserMenu, setShowUserMenu] = useState(false);

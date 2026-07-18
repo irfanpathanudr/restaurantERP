@@ -21,7 +21,7 @@ export const usePermission = () => {
 
     // Check if the user's role has the specific permission
     const userPermissions = user.role.permissions || [];
-    return userPermissions.some((p: Permission) => p.code === permissionCode);
+    return userPermissions.some((p) => p.code === permissionCode);
   };
 
   const hasAnyPermission = (permissionCodes: string[]): boolean => {

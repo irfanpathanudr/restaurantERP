@@ -4,7 +4,7 @@ import { ColumnDef } from '@tanstack/react-table';
 import { setPageTitle } from '@/store/slices/uiSlice';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/common/Button';
-import { Plus, Edit, Eye, CheckCircle } from 'lucide-react';
+import { Plus, Edit, Eye } from 'lucide-react';
 import { cn } from '@/utils/cn';
 
 interface PurchaseOrder {
@@ -79,7 +79,7 @@ const PurchaseOrdersPage = () => {
     {
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }) => (
+      cell: ({ row }: { row: any }) => (
         <div className="flex items-center gap-2">
           <Button size="sm" variant="ghost" leftIcon={<Eye className="h-4 w-4" />}>
             View

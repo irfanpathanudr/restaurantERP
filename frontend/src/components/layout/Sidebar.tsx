@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import {
-  toggleSidebar,
+  // toggleSidebar,
   setSidebarOpen,
   selectSidebarOpen,
   selectSidebarCollapsed,

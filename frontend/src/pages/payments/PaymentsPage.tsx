@@ -89,7 +89,7 @@ const PaymentsPage = () => {
     {
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }) => (
+      cell: ({ row }: { row: any }) => (
         <div className="flex items-center gap-2">
           <Button size="sm" variant="ghost" leftIcon={<Eye className="h-4 w-4" />}>
             View

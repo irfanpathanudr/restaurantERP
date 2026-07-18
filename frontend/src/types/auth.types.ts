@@ -34,8 +34,15 @@ export interface User {
   role_id: string | null;
   branch_id: string | null;
   role?: Role;
+  branch?: Branch;
   is_email_verified: boolean;
   last_login_at: string | null;
+}
+
+export interface Branch {
+  id: string;
+  name: string;
+  code?: string;
 }
 
 export interface Role {

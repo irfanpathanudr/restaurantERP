@@ -7,7 +7,7 @@ import { selectSidebarOpen, selectSidebarCollapsed } from '@/store/slices/uiSlic
 import { cn } from '@/utils/cn';
 
 const DashboardLayout = () => {
-  const sidebarOpen = useSelector(selectSidebarOpen);
+  // const sidebarOpen = useSelector(selectSidebarOpen);
   const sidebarCollapsed = useSelector(selectSidebarCollapsed);
 
   return (

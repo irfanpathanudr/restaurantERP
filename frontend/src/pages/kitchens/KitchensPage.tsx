@@ -8,7 +8,6 @@ import { Modal } from '@/components/common/Modal';
 import { apiService } from '@/services/api.service';
 import { Plus, Edit, Trash2, ChefHat } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { cn } from '@/utils/cn';
 
 interface Kitchen {
   id: string;

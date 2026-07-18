@@ -16,7 +16,7 @@ export const ThemeController: React.FC = () => {
   const dispatch = useDispatch();
   const theme = useSelector(selectTheme);
   const themeColor = useSelector(selectThemeColor);
-  const actualTheme = useSelector(selectActualTheme);
+  // const actualTheme = useSelector(selectActualTheme);
   const [showColorPicker, setShowColorPicker] = useState(false);
 
   const themes: { value: ThemeMode; label: string; icon: React.ReactNode }[] = [

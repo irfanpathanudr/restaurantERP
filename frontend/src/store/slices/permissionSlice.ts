@@ -1,5 +1,4 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Permission } from '@/types/entities.types';
 
 interface PermissionState {
   permissions: string[]; // Array of permission names like "users:create", "orders:read"

@@ -8,7 +8,7 @@ import { Modal } from '@/components/common/Modal';
 import { PermissionGuard } from '@/components/common/PermissionGuard';
 import { userService } from '@/services/user.service';
 import { roleService } from '@/services/role.service';
-import { User, Role, UserStatus } from '@/types/entities.types';
+import { User, Role } from '@/types/entities.types';
 import { Plus, Edit, Trash2, Lock, Unlock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
@@ -204,7 +204,7 @@ const UsersPage: React.FC = () => {
     {
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }) => (
+      cell: ({ row }: { row: any }) => (
         <div className="flex items-center gap-2">
           {(isSuperAdmin || currentUser?.id !== row.original.id) && (
             <>

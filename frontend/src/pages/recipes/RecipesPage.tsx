@@ -5,7 +5,6 @@ import { setPageTitle } from '@/store/slices/uiSlice';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/common/Button';
 import { Plus, Edit, Trash2 } from 'lucide-react';
-import toast from 'react-hot-toast';
 
 interface Recipe {
   id: number;
@@ -53,7 +52,7 @@ const RecipesPage = () => {
     {
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }) => (
+      cell: ({ row }: { row: any }) => (
         <div className="flex items-center gap-2">
           <Button size="sm" variant="ghost" leftIcon={<Edit className="h-4 w-4" />}>
             Edit

@@ -8,8 +8,8 @@ import { Modal } from '@/components/common/Modal';
 import { PermissionGuard } from '@/components/common/PermissionGuard';
 import { vendorService } from '@/services/vendor.service';
 import { Vendor } from '@/types/entities.types';
-import { CreateVendorDto, UpdateVendorDto } from '@/types/dto.types';
-import { Plus, Edit, Trash2, Eye, Star } from 'lucide-react';
+import { CreateVendorDto } from '@/types/dto.types';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
 
@@ -43,7 +43,7 @@ const VendorsPage: React.FC = () => {
     try {
       setLoading(true);
       const response = await vendorService.list();
-      setVendors(response.data || []);
+      setVendors(response.items || []);
     } catch (error) {
       toast.error('Failed to fetch vendors');
     } finally {
@@ -198,7 +198,7 @@ const VendorsPage: React.FC = () => {
     {
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }) => (
+      cell: ({ row }: { row: any }) => (
         <div className="flex items-center gap-2">
           <PermissionGuard permission="vendors:update">
             <Button

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { ColumnDef } from '@tantml:function_calls';
+import { ColumnDef } from '@tanstack/react-table';
 import { setPageTitle } from '@/store/slices/uiSlice';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/common/Button';
@@ -9,7 +9,7 @@ import { PermissionGuard } from '@/components/common/PermissionGuard';
 import { roleService } from '@/services/role.service';
 import { permissionService } from '@/services/permission.service';
 import { Role, Permission, PermissionType } from '@/types/entities.types';
-import { Plus, Edit, Trash2, Shield, Check } from 'lucide-react';
+import { Plus, Edit, Trash2, Shield } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
 import { RootState } from '@/store';
@@ -173,7 +173,7 @@ const RolesPage: React.FC = () => {
     {
       accessorKey: 'code',
       header: 'Code',
-      cell: ({ row }) => (
+      cell: ({ row }: { row: any }) => (
         <span className="font-mono font-medium text-gray-900 dark:text-gray-100">
           {row.original.code}
         </span>
@@ -182,7 +182,7 @@ const RolesPage: React.FC = () => {
     {
       accessorKey: 'name',
       header: 'Name',
-      cell: ({ row }) => (
+      cell: ({ row }: { row: any }) => (
         <div>
           <div className="font-medium text-gray-900 dark:text-gray-100">
             {row.original.name}
@@ -196,7 +196,7 @@ const RolesPage: React.FC = () => {
     {
       accessorKey: 'level',
       header: 'Level',
-      cell: ({ row }) => (
+      cell: ({ row }: { row: any }) => (
         <span className="px-2 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
           Level {row.original.level}
         </span>
@@ -205,7 +205,7 @@ const RolesPage: React.FC = () => {
     {
       accessorKey: 'permissions',
       header: 'Permissions',
-      cell: ({ row }) => (
+      cell: ({ row }: { row: any }) => (
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-600 dark:text-gray-400">
             {row.original.permissions?.length || 0} assigned
@@ -221,7 +221,7 @@ const RolesPage: React.FC = () => {
     {
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }) => (
+      cell: ({ row }: { row: any }) => (
         <div className="flex items-center gap-2">
           {(isSuperAdmin || row.original.code !== 'SUPER_ADMIN') && (
             <>

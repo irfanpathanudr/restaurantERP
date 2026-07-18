@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import {
   useReactTable,
   getCoreRowModel,
@@ -19,7 +19,6 @@ import {
   Download,
   Upload,
   RefreshCw,
-  Filter,
   X,
 } from 'lucide-react';
 import { cn } from '@/utils/cn';
@@ -50,7 +49,7 @@ export function DataTable<TData>({
   exportable = true,
   importable = false,
   refreshable = true,
-  filterable = false,
+  // filterable = false,
   onRefresh,
   onExport,
   onImport,

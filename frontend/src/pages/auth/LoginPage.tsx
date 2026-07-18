@@ -34,7 +34,7 @@ const LoginPage = () => {
   const onSubmit = async (data: LoginFormData) => {
     setLoading(true);
     try {
-      const response = await authService.login(data);
+      const _response = await authService.login(data);
       
       // Fetch fresh user data with full relations
       const currentUser = await authService.getCurrentUser();
