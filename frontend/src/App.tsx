@@ -102,22 +102,41 @@ function App() {
       dispatch(setLoading(true));
       try {
         const token = localStorage.getItem('accessToken');
-        
-        if (token) {
-          // Fetch fresh user data from API
+
+        if (!token) {
+          // No token — definitely not authenticated
+          dispatch(setUser(null));
+          return;
+        }
+
+        // Try to fetch fresh user data from the API
+        try {
           const user = await authService.getCurrentUser();
           dispatch(setUser(user));
-        } else {
-          // No token, user is not authenticated
-          dispatch(setUser(null));
+        } catch (apiError: any) {
+          const status = apiError?.response?.status;
+
+          if (status === 401) {
+            // Token is invalid/expired and refresh also failed — clear everything
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('user');
+            dispatch(setUser(null));
+          } else {
+            // Network error or server unavailable — restore from localStorage cache
+            // so the user isn't logged out due to a transient backend issue
+            const cached = localStorage.getItem('user');
+            if (cached) {
+              try {
+                dispatch(setUser(JSON.parse(cached)));
+              } catch {
+                dispatch(setUser(null));
+              }
+            } else {
+              dispatch(setUser(null));
+            }
+          }
         }
-      } catch (error) {
-        console.error('Auth initialization failed:', error);
-        // Clear invalid auth state
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
-        dispatch(setUser(null));
       } finally {
         dispatch(setLoading(false));
       }

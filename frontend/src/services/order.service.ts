@@ -117,6 +117,24 @@ class OrderService {
     const response = await apiService.post(API_ENDPOINTS.ORDERS.DISCOUNT(orderId), data);
     return response.data.data;
   }
+
+  async createInvoice(orderId: string, notes?: string) {
+    const response = await apiService.post(API_ENDPOINTS.INVOICES.CREATE, {
+      orderId,
+      notes,
+    });
+    return response.data.data;
+  }
+
+  async recordPayment(payload: {
+    orderId: string;
+    amount: number;
+    paymentMethod: string;
+    notes?: string;
+  }) {
+    const response = await apiService.post(API_ENDPOINTS.PAYMENTS.CREATE, payload);
+    return response.data.data;
+  }
 }
 
 export const orderService = new OrderService();

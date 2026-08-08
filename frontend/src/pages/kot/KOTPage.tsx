@@ -13,9 +13,17 @@ import {
   Play,
   Printer,
   XCircle,
+  Bluetooth,
+  BluetoothOff,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
+import {
+  connectPrinter,
+  disconnectPrinter,
+  printKotBluetooth,
+  printKotFallback,
+} from '@/utils/escpos';
 
 interface KotItem {
   menu_item_id?: string;
@@ -78,6 +86,23 @@ const KOTPage = () => {
   const [kitchenFilter, setKitchenFilter] = useState('all');
   const [showServed, setShowServed] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
+  const [btStatus, setBtStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+  const [btName, setBtName] = useState<string | null>(null);
+
+  const isBluetoothAvailable = typeof navigator !== 'undefined' && !!navigator.bluetooth;
+
+  const connectBt = async () => {
+    setBtStatus('connecting');
+    try {
+      await connectPrinter();
+      setBtStatus('connected');
+      setBtName('Printer Connected');
+      toast.success('Bluetooth printer connected');
+    } catch (err: any) {
+      setBtStatus('error');
+      toast.error(err?.message || 'Bluetooth connection failed');
+    }
+  };
 
   const fetchKots = useCallback(async () => {
     try {
@@ -136,6 +161,18 @@ const KOTPage = () => {
       const result = await kotService.print(id);
       const payload = result?.printPayload;
       if (payload) {
+        // Try Bluetooth ESC/POS first, fall back to browser print
+        if (isBluetoothAvailable) {
+          try {
+            await printKotBluetooth(payload);
+            setBtStatus('connected');
+          } catch (btErr: any) {
+            setBtStatus('error');
+            printKotFallback(payload); // fallback
+          }
+        } else {
+          printKotFallback(payload);
+        }
         toast.success(
           `Printed ${payload.kotNumber} (Table ${payload.tableNumber}) — print #${payload.printCount}`
         );
@@ -172,6 +209,17 @@ const KOTPage = () => {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          {/* Bluetooth printer button */}
+          {isBluetoothAvailable && (
+            <Button
+              variant="outline"
+              onClick={btStatus === 'connected' ? () => { disconnectPrinter(); setBtStatus('disconnected'); setBtName(null); } : connectBt}
+              leftIcon={btStatus === 'connected' ? <Bluetooth className="h-4 w-4 text-green-500" /> : <BluetoothOff className="h-4 w-4" />}
+              className={btStatus === 'connected' ? 'border-green-500 text-green-600 dark:text-green-400' : btStatus === 'error' ? 'border-red-400 text-red-500' : ''}
+            >
+              {btStatus === 'connecting' ? 'Connecting...' : btStatus === 'connected' ? (btName || 'Printer ON') : 'Connect Printer'}
+            </Button>
+          )}
           <Button
             variant="outline"
             leftIcon={<RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />}

@@ -2,12 +2,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowLeft,
+  CheckCircle2,
+  ChefHat,
   Clock,
   Loader2,
   Minus,
   Plus,
   Printer,
   Receipt,
+  RefreshCw,
   Search,
   Send,
   Trash2,
@@ -32,7 +35,7 @@ import {
 } from '@/services/kotApi';
 import { useAuth } from '@/hooks/useAuth';
 import { cn, formatMoney, printBill, printKotTicket, resolveMediaUrl } from '@/utils/helpers';
-import type { CartLine, Category, Kitchen, MenuItem, Order } from '@/types';
+import type { CartLine, Category, Kitchen, Kot, MenuItem, Order } from '@/types';
 import { CheckoutModal, type PaymentData } from '@/components/CheckoutModal';
 
 function OrderTimer({ startTime }: { startTime?: string | null }) {
@@ -88,6 +91,171 @@ function OrderTimer({ startTime }: { startTime?: string | null }) {
   );
 }
 
+// ─── KOT status display ───────────────────────────────────────────────────────
+const KOT_STATUS_CONFIG: Record<
+  string,
+  { label: string; color: string; dot: string; icon?: React.ReactNode }
+> = {
+  pending: {
+    label: 'Waiting',
+    color: 'border-amber-500/40 bg-amber-500/10 text-amber-300',
+    dot: 'bg-amber-400',
+  },
+  in_progress: {
+    label: 'Preparing',
+    color: 'border-sky-500/40 bg-sky-500/10 text-sky-300',
+    dot: 'bg-sky-400 animate-pulse',
+  },
+  ready: {
+    label: '🍽 Ready!',
+    color: 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300',
+    dot: 'bg-emerald-400',
+  },
+  served: {
+    label: 'Served',
+    color: 'border-white/10 bg-white/5 text-white/40',
+    dot: 'bg-white/30',
+  },
+  cancelled: {
+    label: 'Cancelled',
+    color: 'border-red-500/30 bg-red-500/10 text-red-400',
+    dot: 'bg-red-400',
+  },
+};
+
+function KotStatusSection({
+  orderId,
+  refreshTrigger,
+}: {
+  orderId: string;
+  refreshTrigger: number;
+}) {
+  const [kots, setKots] = useState<Kot[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    try {
+      const list = await getKots({ orderId });
+      // Show most recent first, exclude served/cancelled unless all are done
+      const active = list.filter((k) => !['served', 'cancelled'].includes(k.kot_status));
+      setKots(active.length > 0 ? active : list.slice(0, 3));
+    } catch {
+      /* silent */
+    } finally {
+      setLoading(false);
+    }
+  }, [orderId]);
+
+  // Poll every 8 seconds so waiter sees live kitchen updates
+  useEffect(() => {
+    load();
+    const id = setInterval(load, 8000);
+    return () => clearInterval(id);
+  }, [load, refreshTrigger]);
+
+  if (loading && kots.length === 0) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-white/30 py-4 justify-center">
+        <Loader2 size={13} className="animate-spin" />
+        Loading kitchen status…
+      </div>
+    );
+  }
+
+  if (kots.length === 0) return null;
+
+  return (
+    <div className="mb-4">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-1.5 text-xs font-semibold text-white/60 uppercase tracking-wider">
+          <ChefHat size={13} />
+          Kitchen Status
+        </div>
+        <button
+          type="button"
+          onClick={load}
+          className="text-[10px] text-white/30 hover:text-white/60 flex items-center gap-1"
+        >
+          <RefreshCw size={11} />
+          Refresh
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        {kots.map((kot) => {
+          const cfg = KOT_STATUS_CONFIG[kot.kot_status] ?? KOT_STATUS_CONFIG.pending;
+          const isReady = kot.kot_status === 'ready';
+          return (
+            <div
+              key={kot.id}
+              className={cn(
+                'rounded-xl border px-3 py-2.5 flex items-start gap-3',
+                cfg.color,
+                isReady && 'ring-1 ring-emerald-500/40'
+              )}
+            >
+              {/* Animated status dot */}
+              <span className={cn('mt-1.5 h-2.5 w-2.5 rounded-full shrink-0', cfg.dot)} />
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <span className="text-xs font-bold">{kot.kot_number}</span>
+                  <span
+                    className={cn(
+                      'text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md',
+                      isReady
+                        ? 'bg-emerald-500/25 text-emerald-300'
+                        : 'bg-black/20 text-current'
+                    )}
+                  >
+                    {cfg.label}
+                  </span>
+                </div>
+
+                {/* Items in this KOT */}
+                <div className="flex flex-wrap gap-x-3 gap-y-0.5">
+                  {(kot.items || []).slice(0, 5).map((item, i) => (
+                    <span key={i} className="text-[11px] opacity-80">
+                      {item.quantity}× {item.name}
+                    </span>
+                  ))}
+                  {(kot.items || []).length > 5 && (
+                    <span className="text-[11px] opacity-50">
+                      +{kot.items.length - 5} more
+                    </span>
+                  )}
+                </div>
+
+                {/* Kitchen name + time */}
+                <div className="flex items-center gap-2 mt-1">
+                  {kot.kitchen?.name && (
+                    <span className="text-[10px] opacity-50">{kot.kitchen.name}</span>
+                  )}
+                  <span className="text-[10px] opacity-40 flex items-center gap-1">
+                    <Clock size={10} />
+                    {(() => {
+                      const mins = Math.floor(
+                        (Date.now() - new Date(kot.created_at).getTime()) / 60000
+                      );
+                      return mins < 1 ? 'Just now' : `${mins}m ago`;
+                    })()}
+                  </span>
+                </div>
+              </div>
+
+              {/* Big "READY" indicator */}
+              {isReady && (
+                <CheckCircle2 size={20} className="text-emerald-400 shrink-0 mt-0.5" />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── Order page ───────────────────────────────────────────────────────────────
 export function OrderPage() {
   const { tableId } = useParams<{ tableId: string }>();
   const navigate = useNavigate();
@@ -105,6 +273,8 @@ export function OrderPage() {
   const [sending, setSending] = useState(false);
   const [tab, setTab] = useState<'menu' | 'order'>('menu');
   const [showCheckout, setShowCheckout] = useState(false);
+  // Incrementing this triggers KotStatusSection to re-fetch immediately
+  const [kotRefreshTrigger, setKotRefreshTrigger] = useState(0);
 
   const load = useCallback(async () => {
     if (!tableId) return;
@@ -228,6 +398,7 @@ export function OrderPage() {
       setCart([]);
       setTab('order');
       toast.success('Sent to kitchen');
+      setKotRefreshTrigger((n) => n + 1); // refresh KOT status panel
 
       // Auto-print latest KOT if we have id from addItems
       if (createdKotId) {
@@ -557,6 +728,14 @@ export function OrderPage() {
         </div>
       ) : (
         <div className="flex-1 px-4 pt-4 pb-36">
+          {/* ── KOT Kitchen Status ── always show when order exists */}
+          {order && (
+            <KotStatusSection
+              orderId={order.id}
+              refreshTrigger={kotRefreshTrigger}
+            />
+          )}
+
           {/* Search for Order Items */}
           {order && (order.order_items?.length || 0) > 0 && (
             <div className="relative mb-4">

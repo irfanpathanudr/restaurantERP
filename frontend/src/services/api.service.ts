@@ -38,59 +38,63 @@ class ApiService {
       async (error: AxiosError) => {
         const originalRequest = error.config as AxiosRequestConfig & { _retry?: boolean };
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
-          if (this.isRefreshing) {
-            return new Promise((resolve) => {
-              this.refreshSubscribers.push((token: string) => {
-                if (originalRequest.headers) {
-                  originalRequest.headers.Authorization = `Bearer ${token}`;
-                }
-                resolve(this.api(originalRequest));
+        if (error.response?.status === 401) {
+          // Only attempt token refresh for authenticated requests that haven't retried yet
+          if (!originalRequest._retry && originalRequest.url !== '/auth/login') {
+            if (this.isRefreshing) {
+              return new Promise((resolve) => {
+                this.refreshSubscribers.push((token: string) => {
+                  if (originalRequest.headers) {
+                    originalRequest.headers.Authorization = `Bearer ${token}`;
+                  }
+                  resolve(this.api(originalRequest));
+                });
               });
-            });
-          }
-
-          originalRequest._retry = true;
-          this.isRefreshing = true;
-
-          try {
-            const refreshToken = localStorage.getItem('refreshToken');
-            if (!refreshToken) {
-              throw new Error('No refresh token');
             }
 
-            const response = await axios.post(`${API_CONFIG.BASE_URL}/auth/refresh-token`, {
-              refreshToken,
-            });
+            originalRequest._retry = true;
+            this.isRefreshing = true;
 
-            const { accessToken, refreshToken: newRefreshToken } = response.data.data;
+            try {
+              const refreshToken = localStorage.getItem('refreshToken');
+              if (!refreshToken) {
+                throw new Error('No refresh token');
+              }
 
-            localStorage.setItem('accessToken', accessToken);
-            localStorage.setItem('refreshToken', newRefreshToken);
+              const response = await axios.post(`${API_CONFIG.BASE_URL}/auth/refresh-token`, {
+                refreshToken,
+              });
 
-            this.refreshSubscribers.forEach((callback) => callback(accessToken));
-            this.refreshSubscribers = [];
+              const { accessToken, refreshToken: newRefreshToken } = response.data.data;
 
-            if (originalRequest.headers) {
-              originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+              localStorage.setItem('accessToken', accessToken);
+              localStorage.setItem('refreshToken', newRefreshToken);
+
+              this.refreshSubscribers.forEach((callback) => callback(accessToken));
+              this.refreshSubscribers = [];
+
+              if (originalRequest.headers) {
+                originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+              }
+
+              return this.api(originalRequest);
+            } catch (refreshError) {
+              // Clear auth data and redirect to login
+              localStorage.removeItem('accessToken');
+              localStorage.removeItem('refreshToken');
+              localStorage.removeItem('user');
+              window.location.href = '/login';
+              return Promise.reject(refreshError);
+            } finally {
+              this.isRefreshing = false;
             }
-
-            return this.api(originalRequest);
-          } catch (refreshError) {
-            // Clear auth data
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-            localStorage.removeItem('user');
-            
-            // Redirect to login
-            window.location.href = '/login';
-            return Promise.reject(refreshError);
-          } finally {
-            this.isRefreshing = false;
           }
+
+          // For login failures and retried requests: reject silently, let the caller handle the message
+          return Promise.reject(error);
         }
 
-        // Handle other errors
+        // Handle all other errors with a toast
         this.handleError(error);
         return Promise.reject(error);
       }

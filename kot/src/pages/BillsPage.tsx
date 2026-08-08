@@ -1,16 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Receipt, RefreshCw } from 'lucide-react';
+import { Bluetooth, BluetoothOff, Loader2, Receipt, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { createInvoice, getOrder } from '@/services/kotApi';
 import { api } from '@/services/api';
 import { useAuth } from '@/hooks/useAuth';
-import { formatMoney, printBill } from '@/utils/helpers';
+import { usePrinter } from '@/hooks/usePrinter';
+import { formatMoney } from '@/utils/helpers';
 import type { Order } from '@/types';
 
 export function BillsPage() {
   const { branchId, hasPermission } = useAuth();
   const navigate = useNavigate();
+  const printer = usePrinter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -51,9 +53,11 @@ export function BillsPage() {
     try {
       const order = await getOrder(orderId);
       await createInvoice(orderId);
-      printBill(order);
-      toast.success('Bill generated');
+      await printer.printBill(order);
+      toast.success('Bill generated & sent to printer');
       await load();
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed to generate bill');
     } finally {
       setBusyId(null);
     }
@@ -66,14 +70,61 @@ export function BillsPage() {
           <h2 className="font-display text-xl font-bold">Open bills</h2>
           <p className="text-xs text-white/45">Generate invoice & print</p>
         </div>
-        <button
-          type="button"
-          onClick={load}
-          className="p-2.5 rounded-xl bg-surface-card border border-white/10"
-        >
-          <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Bluetooth printer connect button */}
+          {printer.isBluetoothAvailable && (
+            <button
+              type="button"
+              onClick={
+                printer.status === 'connected'
+                  ? printer.disconnect
+                  : printer.connect
+              }
+              title={
+                printer.status === 'connected'
+                  ? `Connected: ${printer.printerName || 'Printer'} — tap to disconnect`
+                  : 'Connect Bluetooth Printer'
+              }
+              className={`p-2.5 rounded-xl border flex items-center gap-1.5 text-xs font-medium transition-colors
+                ${printer.status === 'connected'
+                  ? 'bg-emerald-900/40 border-emerald-500/50 text-emerald-400'
+                  : printer.status === 'connecting'
+                  ? 'bg-surface-card border-white/10 text-white/50'
+                  : printer.status === 'error'
+                  ? 'bg-red-900/30 border-red-500/40 text-red-400'
+                  : 'bg-surface-card border-white/10 text-white/70'
+                }`}
+            >
+              {printer.status === 'connecting' ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : printer.status === 'connected' ? (
+                <Bluetooth size={14} />
+              ) : (
+                <BluetoothOff size={14} />
+              )}
+              {printer.status === 'connected'
+                ? (printer.printerName || 'Connected')
+                : printer.status === 'connecting'
+                ? 'Connecting...'
+                : 'Connect Printer'}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={load}
+            className="p-2.5 rounded-xl bg-surface-card border border-white/10"
+          >
+            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+          </button>
+        </div>
       </div>
+
+      {/* Printer error banner */}
+      {printer.error && (
+        <div className="mb-3 rounded-xl bg-red-900/30 border border-red-500/30 px-4 py-2.5 text-xs text-red-300">
+          Printer: {printer.error}
+        </div>
+      )}
 
       {loading ? (
         <div className="flex justify-center py-16 text-white/40">

@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2, RefreshCw, Users } from 'lucide-react';
-import { getBranches, getTables } from '@/services/kotApi';
+import { getBranches, getKots, getTables } from '@/services/kotApi';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/utils/helpers';
+import { POLL_INTERVAL_MS } from '@/config/api';
 import type { Branch, Table } from '@/types';
 
 const statusStyle: Record<string, string> = {
@@ -20,6 +21,18 @@ export function TablesPage() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'available' | 'occupied'>('all');
+  // Map of order_id → true when that order has a KOT in 'ready' state
+  const [readyOrderIds, setReadyOrderIds] = useState<Set<string>>(new Set());
+
+  const loadReadyKots = useCallback(async () => {
+    try {
+      const kots = await getKots({ status: 'ready', branchId: branchId || undefined });
+      const ids = new Set(kots.map((k) => k.order_id).filter(Boolean));
+      setReadyOrderIds(ids);
+    } catch {
+      /* silent */
+    }
+  }, [branchId]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -40,6 +53,13 @@ export function TablesPage() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Poll for ready KOTs so the badge updates automatically
+  useEffect(() => {
+    loadReadyKots();
+    const id = setInterval(loadReadyKots, POLL_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [loadReadyKots]);
 
   const filtered = tables.filter((t) => {
     if (!branchId) return true;
@@ -102,27 +122,52 @@ export function TablesPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3">
-          {filtered.map((table) => (
-            <button
-              key={table.id}
-              type="button"
-              onClick={() => navigate(`/order/${table.id}`)}
-              className={cn(
-                'rounded-2xl border p-4 text-left transition active:scale-[0.98]',
-                statusStyle[table.table_status] || statusStyle.available
-              )}
-            >
-              <p className="font-display text-2xl font-bold">{table.table_number}</p>
-              <p className="text-xs opacity-80 mt-1 truncate">{table.name}</p>
-              <div className="mt-3 flex items-center justify-between text-[11px] uppercase tracking-wide">
-                <span>{table.table_status}</span>
-                <span className="inline-flex items-center gap-1 opacity-70">
-                  <Users size={12} />
-                  {table.capacity}
-                </span>
-              </div>
-            </button>
-          ))}
+          {filtered.map((table) => {
+            const hasReadyFood =
+              table.table_status === 'occupied' &&
+              table.current_order_id != null &&
+              readyOrderIds.has(table.current_order_id);
+
+            return (
+              <button
+                key={table.id}
+                type="button"
+                onClick={() => navigate(`/order/${table.id}`)}
+                className={cn(
+                  'rounded-2xl border p-4 text-left transition active:scale-[0.98] relative overflow-hidden',
+                  hasReadyFood
+                    ? 'border-emerald-500/60 bg-emerald-500/15 ring-1 ring-emerald-500/40'
+                    : statusStyle[table.table_status] || statusStyle.available
+                )}
+              >
+                {/* Ready food pulse ring */}
+                {hasReadyFood && (
+                  <span className="absolute top-2 right-2 flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-emerald-500" />
+                  </span>
+                )}
+
+                <p className="font-display text-2xl font-bold">{table.table_number}</p>
+                <p className="text-xs opacity-80 mt-1 truncate">{table.name}</p>
+
+                {/* Status row */}
+                <div className="mt-3 flex items-center justify-between text-[11px] uppercase tracking-wide">
+                  <span>
+                    {hasReadyFood ? (
+                      <span className="text-emerald-400 font-semibold">🍽 Ready!</span>
+                    ) : (
+                      table.table_status
+                    )}
+                  </span>
+                  <span className="inline-flex items-center gap-1 opacity-70">
+                    <Users size={12} />
+                    {table.capacity}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
           {filtered.length === 0 && (
             <p className="col-span-2 text-center text-sm text-white/40 py-12">No tables found</p>
           )}

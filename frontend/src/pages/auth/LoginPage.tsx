@@ -34,16 +34,18 @@ const LoginPage = () => {
   const onSubmit = async (data: LoginFormData) => {
     setLoading(true);
     try {
-      const _response = await authService.login(data);
-      
-      // Fetch fresh user data with full relations
-      const currentUser = await authService.getCurrentUser();
-      dispatch(setUser(currentUser));
-      
+      const response = await authService.login(data);
+
+      // Use the user returned directly from the login response — no extra round-trip needed.
+      // authService.login() already stored tokens in localStorage.
+      dispatch(setUser(response.data.user));
+
       toast.success('Login successful!');
       navigate('/dashboard', { replace: true });
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Login failed');
+      const message =
+        error.response?.data?.message || error.message || 'Login failed. Please try again.';
+      toast.error(message);
     } finally {
       setLoading(false);
     }
