@@ -100,11 +100,16 @@ export const seedPermissions = async () => {
   for (const permissionData of permissions) {
     const existing = await permissionRepository.findOne({
       where: { name: permissionData.name },
+      withDeleted: true,
     });
 
     if (!existing) {
       const permission = permissionRepository.create(permissionData);
       await permissionRepository.save(permission);
+    } else if (existing.deleted_at) {
+      existing.deleted_at = null;
+      existing.deleted_by = null;
+      await permissionRepository.save(existing);
     }
   }
 };

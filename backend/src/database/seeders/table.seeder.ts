@@ -37,12 +37,16 @@ export async function seedTables(dataSource: DataSource): Promise<void> {
         seq += 1;
 
         const exists = await tableRepo.findOne({
-          where: {
-            table_number: tableNumber,
-            branch_id: branch.id,
-          },
+          where: { table_number: tableNumber, branch_id: branch.id },
+          withDeleted: true,
         });
-        if (exists) continue;
+        if (exists) {
+          exists.deleted_at = null;
+          exists.deleted_by = null;
+          exists.is_active = true;
+          await tableRepo.save(exists);
+          continue;
+        }
 
         const table = tableRepo.create({
           name: `Table ${tableNumber}`,

@@ -6,51 +6,43 @@ export async function seedRestaurants(dataSource: DataSource): Promise<void> {
 
   const restaurants = [
     {
-      name: 'Italian Bistro Main',
+      name: 'Udaipur Zayka',
       code: 'REST001',
-      phone: '+1234567890',
-      email: 'main@italianbistro.com',
-      address: '123 Main Street',
-      city: 'New York',
-      state: 'NY',
-      pincode: '10001',
-      country: 'USA',
-      website: 'https://italianbistro.com',
-      gst_number: 'GST123456',
-      pan_number: 'PAN123456',
-      currency: 'USD',
+      phone: '+919876543210',
+      email: 'info@udaipurzayka.com',
+      address: 'Main Market Road',
+      city: 'Udaipur',
+      state: 'Rajasthan',
+      pincode: '313001',
+      country: 'India',
+      website: null,
+      gst_number: null,
+      pan_number: null,
+      currency: 'INR',
       language: 'en',
-      timezone: 'America/New_York',
-      is_active: true,
-    },
-    {
-      name: 'Italian Bistro Downtown',
-      code: 'REST002',
-      phone: '+1234567891',
-      email: 'downtown@italianbistro.com',
-      address: '456 Downtown Ave',
-      city: 'Los Angeles',
-      state: 'CA',
-      pincode: '90001',
-      country: 'USA',
-      website: 'https://italianbistro.com',
-      gst_number: 'GST123457',
-      pan_number: 'PAN123457',
-      currency: 'USD',
-      language: 'en',
-      timezone: 'America/Los_Angeles',
+      timezone: 'Asia/Kolkata',
       is_active: true,
     },
   ];
 
-  for (const restaurantData of restaurants) {
-    const exists = await restaurantRepo.findOne({
-      where: { code: restaurantData.code },
+  for (const data of restaurants) {
+    // Use withDeleted so soft-deleted duplicates are also found and restored
+    const existing = await restaurantRepo.findOne({
+      where: { code: data.code },
+      withDeleted: true,
     });
-    if (!exists) {
-      const restaurant = restaurantRepo.create(restaurantData);
+
+    if (existing) {
+      // Restore if soft-deleted and update fields
+      Object.assign(existing, data);
+      existing.deleted_at = null;
+      existing.deleted_by = null;
+      await restaurantRepo.save(existing);
+      console.log(`🔄 Restaurant updated/restored: ${data.name}`);
+    } else {
+      const restaurant = restaurantRepo.create(data);
       await restaurantRepo.save(restaurant);
-      console.log(`✅ Restaurant seeded: ${restaurant.name}`);
+      console.log(`✅ Restaurant seeded: ${data.name}`);
     }
   }
 }

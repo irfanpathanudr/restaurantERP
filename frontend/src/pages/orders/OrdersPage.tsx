@@ -146,14 +146,12 @@ const OrdersPage: React.FC = () => {
   const [filteredItems, setFilteredItems] = useState<MenuItem[]>([]);
   const [tables, setTables] = useState<TableOption[]>([]);
   const [branches, setBranches] = useState<BranchOption[]>([]);
-  const [kitchens, setKitchens] = useState<{ id: string; name: string; branch_id?: string }[]>([]);
   const [menuLoading, setMenuLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedTable, setSelectedTable] = useState('');
   const [selectedBranch, setSelectedBranch] = useState('');
-  const [selectedKitchen, setSelectedKitchen] = useState('');
   const [orderType, setOrderType] = useState<'dine_in' | 'takeaway' | 'delivery'>('dine_in');
   const [orderNotes, setOrderNotes] = useState('');
 
@@ -222,24 +220,17 @@ const OrdersPage: React.FC = () => {
   const fetchCreateData = async () => {
     try {
       setMenuLoading(true);
-      const [menuRes, tablesRes, branchesRes, kitchensRes] = await Promise.all([
+      const [menuRes, tablesRes, branchesRes] = await Promise.all([
         apiService.get('/menu-items', { params: { isAvailable: true } }),
         apiService.get('/tables'),
         apiService.get('/branches'),
-        apiService.get('/kitchens'),
       ]);
       setMenuItems(menuRes.data.data || []);
       setTables(tablesRes.data.data || []);
       const branchList = branchesRes.data.data || [];
-      const kitchenList = kitchensRes.data.data || [];
       setBranches(branchList);
-      setKitchens(kitchenList);
       const defaultBranch = user?.branch_id || branchList[0]?.id || '';
       setSelectedBranch(defaultBranch);
-      const branchKitchens = kitchenList.filter(
-        (k: { branch_id?: string }) => !k.branch_id || k.branch_id === defaultBranch
-      );
-      setSelectedKitchen(branchKitchens[0]?.id || kitchenList[0]?.id || '');
     } catch {
       toast.error('Failed to load menu / tables');
     } finally {
@@ -250,7 +241,6 @@ const OrdersPage: React.FC = () => {
   const openCreate = async () => {
     setCart([]);
     setSelectedTable('');
-    setSelectedKitchen('');
     setOrderNotes('');
     setOrderType('dine_in');
     setSearchQuery('');
@@ -323,8 +313,7 @@ const OrdersPage: React.FC = () => {
         orderType,
         tableId: orderType === 'dine_in' ? selectedTable : undefined,
         notes: orderNotes || undefined,
-        kitchenId: selectedKitchen || undefined,
-        createKot: Boolean(selectedKitchen),
+        createKot: true,
         items: cart.map((item) => ({
           menuItemId: item.menu_item.id,
           quantity: item.quantity,
@@ -866,24 +855,6 @@ const OrdersPage: React.FC = () => {
                 </select>
               </div>
             )}
-
-            <div>
-              <label className="block text-sm font-medium mb-2">Kitchen (for KOT)</label>
-              <select
-                value={selectedKitchen}
-                onChange={(e) => setSelectedKitchen(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
-              >
-                <option value="">No KOT</option>
-                {kitchens
-                  .filter((k) => !selectedBranch || !k.branch_id || k.branch_id === selectedBranch)
-                  .map((k) => (
-                    <option key={k.id} value={k.id}>
-                      {k.name}
-                    </option>
-                  ))}
-              </select>
-            </div>
 
             <div className="flex-1 overflow-y-auto space-y-2">
               {cart.length === 0 ? (

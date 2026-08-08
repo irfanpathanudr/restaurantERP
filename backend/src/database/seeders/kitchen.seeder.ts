@@ -23,8 +23,17 @@ export async function seedKitchens(dataSource: DataSource): Promise<void> {
   for (const branch of branches) {
     for (const tmpl of templates) {
       const code = `${branch.code}-${tmpl.codeSuffix}`;
-      const exists = await kitchenRepo.findOne({ where: { code } });
-      if (exists) continue;
+      const exists = await kitchenRepo.findOne({ where: { code }, withDeleted: true });
+      if (exists) {
+        // Restore soft-deleted record and update
+        exists.deleted_at = null;
+        exists.deleted_by = null;
+        exists.name = `${tmpl.name} (${branch.name})`;
+        exists.branch_id = branch.id;
+        exists.is_active = true;
+        await kitchenRepo.save(exists);
+        continue;
+      }
 
       const kitchen = kitchenRepo.create({
         name: `${tmpl.name} (${branch.name})`,

@@ -7,84 +7,49 @@ import { seedRoles } from './role.seeder';
 import { seedAdmin } from './admin.seeder';
 import { seedRestaurants } from './restaurant.seeder';
 import { seedBranches } from './branch.seeder';
+import { seedKotUsers } from './kot-users.seeder';
 import { seedKitchens } from './kitchen.seeder';
 import { seedCategories } from './category.seeder';
 import { seedMenuItems } from './menu-item.seeder';
 import { seedTables } from './table.seeder';
-import { seedCustomers } from './customer.seeder';
-import { seedVendors } from './vendor.seeder';
-import { seedRawMaterials } from './raw-material.seeder';
-import { seedEmployees } from './employee.seeder';
-import { seedReservations } from './reservation.seeder';
-import { seedOrders } from './order.seeder';
-import { seedExpenses } from './expense.seeder';
-import { seedPayments } from './payment.seeder';
-import { seedKotUsers } from './kot-users.seeder';
 
 dotenv.config();
 
 const runSeeders = async () => {
   try {
-    // Initialize database connection
     await AppDataSource.initialize();
     logger.info('Database connected successfully');
-
-    // Run seeders in sequence
     logger.info('Starting database seeding...\n');
 
     await seedPermissions();
-    logger.info('✓ Permissions seeded successfully');
+    logger.info('✓ Permissions seeded');
 
     await seedRoles();
-    logger.info('✓ Roles seeded successfully');
+    logger.info('✓ Roles seeded');
 
     await seedAdmin();
-    logger.info('✓ Admin user seeded successfully');
+    logger.info('✓ Admin user seeded');
 
     await seedRestaurants(AppDataSource);
-    logger.info('✓ Restaurants seeded successfully');
+    logger.info('✓ Restaurant seeded');
 
     await seedBranches(AppDataSource);
-    logger.info('✓ Branches seeded successfully');
+    logger.info('✓ Branch seeded');
 
     await seedKotUsers();
-    logger.info('✓ KOT staff users seeded successfully');
+    logger.info('✓ KOT staff users seeded');
 
     await seedKitchens(AppDataSource);
-    logger.info('✓ Kitchens seeded successfully');
+    logger.info('✓ Kitchens seeded');
 
     await seedCategories(AppDataSource);
-    logger.info('✓ Categories seeded successfully');
+    logger.info('✓ Categories seeded');
 
     await seedMenuItems(AppDataSource);
-    logger.info('✓ Menu items seeded successfully');
+    logger.info('✓ Menu items seeded');
 
     await seedTables(AppDataSource);
-    logger.info('✓ Tables seeded successfully');
-
-    await seedCustomers(AppDataSource);
-    logger.info('✓ Customers seeded successfully');
-
-    await seedVendors(AppDataSource);
-    logger.info('✓ Vendors seeded successfully');
-
-    await seedRawMaterials(AppDataSource);
-    logger.info('✓ Raw materials seeded successfully');
-
-    await seedEmployees(AppDataSource);
-    logger.info('✓ Employees seeded successfully');
-
-    await seedReservations(AppDataSource);
-    logger.info('✓ Reservations seeded successfully');
-
-    await seedOrders(AppDataSource);
-    logger.info('✓ Orders seeded successfully');
-
-    await seedExpenses(AppDataSource);
-    logger.info('✓ Expenses seeded successfully');
-
-    await seedPayments(AppDataSource);
-    logger.info('✓ Payments seeded successfully');
+    logger.info('✓ Tables seeded');
 
     logger.info('\n✅ Database seeding completed successfully!');
     process.exit(0);

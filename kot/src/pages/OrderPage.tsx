@@ -290,11 +290,12 @@ export function OrderPage() {
       setMenu(items);
       setCategories(cats);
       setKitchens(kits);
-      if (kits[0] && !kitchenId) setKitchenId(kits[0].id);
+      // Always set to first kitchen (auto-select); backend handles single-kitchen case
+      if (kits[0]) setKitchenId(kits[0].id);
     } finally {
       setLoading(false);
     }
-  }, [tableId, branchId, kitchenId]);
+  }, [tableId, branchId]);
 
   useEffect(() => {
     load();
@@ -362,10 +363,6 @@ export function OrderPage() {
       toast.error('Add items first');
       return;
     }
-    if (!kitchenId) {
-      toast.error('Select a kitchen');
-      return;
-    }
 
     setSending(true);
     try {
@@ -375,7 +372,6 @@ export function OrderPage() {
       if (order) {
         const result = await addOrderItems(order.id, {
           items,
-          kitchenId,
           createKot: true,
         });
         setOrder(result.order);
@@ -386,7 +382,6 @@ export function OrderPage() {
           tableId,
           orderType: 'dine_in',
           items,
-          kitchenId,
           createKot: true,
         });
         setOrder(created);
@@ -727,7 +722,7 @@ export function OrderPage() {
           </div>
         </div>
       ) : (
-        <div className="flex-1 px-4 pt-4 pb-36">
+        <div className="flex-1 px-4 pt-4 pb-48">
           {/* ── KOT Kitchen Status ── always show when order exists */}
           {order && (
             <KotStatusSection

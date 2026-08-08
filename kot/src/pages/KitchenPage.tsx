@@ -55,7 +55,8 @@ export function KitchenPage() {
   useEffect(() => {
     getKitchens(branchId || undefined).then((k) => {
       setKitchens(k);
-      if (k[0] && !kitchenId) setKitchenId(k[0].id);
+      // Auto-select the first (and likely only) kitchen for this branch
+      if (k[0]) setKitchenId(k[0].id);
     });
   }, [branchId]);
 

@@ -20,9 +20,13 @@ export class CreateKOTDto {
   @IsUUID()
   orderId: string;
 
-  @IsNotEmpty()
+  /**
+   * kitchenId is optional — when omitted and only one kitchen exists for the
+   * branch, the server auto-selects it. Required when multiple kitchens exist.
+   */
+  @IsOptional()
   @IsUUID()
-  kitchenId: string;
+  kitchenId?: string;
 
   @IsNotEmpty()
   @IsArray()

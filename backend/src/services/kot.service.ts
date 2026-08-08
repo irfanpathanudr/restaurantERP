@@ -2,6 +2,7 @@ import AppDataSource from '../config/database';
 import { KOT, KOTStatus, KOTPriority } from '../database/entities/KOT.entity';
 import { Order } from '../database/entities/Order.entity';
 import { MenuItem } from '../database/entities/MenuItem.entity';
+import { Kitchen } from '../database/entities/Kitchen.entity';
 import { CreateKOTDto } from '../dto/kot/CreateKOTDto';
 import logger from '../config/logger';
 import { In, Repository } from 'typeorm';
@@ -26,6 +27,40 @@ export class KOTService {
 
   private get menuItemRepository(): Repository<MenuItem> {
     return AppDataSource.getRepository(MenuItem);
+  }
+
+  private get kitchenRepository(): Repository<Kitchen> {
+    return AppDataSource.getRepository(Kitchen);
+  }
+
+  /**
+   * Resolves the kitchen ID to use for a KOT.
+   * - If kitchenId is provided, use it directly.
+   * - If only ONE kitchen exists for the branch, auto-select it.
+   * - If multiple kitchens exist, prefer one named "Main Kitchen", otherwise use the first one.
+   * - Never throws — always picks a kitchen automatically.
+   */
+  private async resolveKitchenId(kitchenId: string | undefined, branchId: string): Promise<string> {
+    if (kitchenId) return kitchenId;
+
+    const kitchens = await this.kitchenRepository.find({
+      where: { branch_id: branchId, is_active: true },
+    });
+
+    if (kitchens.length === 0) {
+      throw new Error('No active kitchen found for this branch. Please create a kitchen first.');
+    }
+
+    if (kitchens.length === 1) {
+      logger.info(`KOT: auto-selected kitchen "${kitchens[0].name}" (only one in branch)`);
+      return kitchens[0].id;
+    }
+
+    // Multiple kitchens — prefer "Main Kitchen", fallback to first
+    const main = kitchens.find(k => k.name.toLowerCase().includes('main kitchen'));
+    const selected = main || kitchens[0];
+    logger.info(`KOT: auto-selected kitchen "${selected.name}" (multiple kitchens, picked default)`);
+    return selected.id;
   }
 
   private normalizeStatus(status: string): KOTStatus {
@@ -65,13 +100,16 @@ export class KOTService {
       });
       if (!order) throw new Error('Order not found');
 
+      // Auto-select kitchen when only one exists; error only when ambiguous
+      const kitchenId = await this.resolveKitchenId(data.kitchenId, order.branch_id);
+
       const enrichedItems = await this.enrichItems(data.items);
       const kotNumber = `KOT-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
 
       const kot = this.kotRepository.create({
         kot_number: kotNumber,
         order_id: data.orderId,
-        kitchen_id: data.kitchenId,
+        kitchen_id: kitchenId,
         kot_status: KOTStatus.PENDING,
         priority: data.priority || KOTPriority.NORMAL,
         items: enrichedItems,

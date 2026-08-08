@@ -16,9 +16,10 @@ export const seedAdmin = async () => {
     throw new Error('Super Admin role not found. Please seed roles first.');
   }
 
-  // Check if admin user already exists
+  // Check if admin user already exists (including soft-deleted)
   const existingAdmin = await userRepository.findOne({
     where: { email: 'admin@restaurant.com' },
+    withDeleted: true,
   });
 
   if (!existingAdmin) {
@@ -40,6 +41,12 @@ export const seedAdmin = async () => {
     console.log('  Email: admin@restaurant.com');
     console.log('  Password: Admin@123');
     console.log('  ⚠ Please change the password after first login!\n');
+  } else if (existingAdmin.deleted_at) {
+    // Restore soft-deleted admin
+    existingAdmin.deleted_at = null;
+    existingAdmin.deleted_by = null;
+    await userRepository.save(existingAdmin);
+    console.log('\n✓ Admin user restored.');
   } else {
     console.log('\n✓ Admin user already exists.');
   }

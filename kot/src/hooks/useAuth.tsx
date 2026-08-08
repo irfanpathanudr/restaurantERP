@@ -76,7 +76,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(me);
         localStorage.setItem('kot_user', JSON.stringify(me));
         const bid = me.branch_id || me.branchId;
-        if (bid && !localStorage.getItem('kot_branchId')) setBranchId(bid);
+        if (bid) {
+          // Always sync branch_id from server — clears any stale cached value
+          setBranchId(bid);
+        } else if (!localStorage.getItem('kot_branchId')) {
+          // no branch on user, don't touch stored value
+        }
       })
       .catch(() => {
         localStorage.removeItem('kot_accessToken');
@@ -94,7 +99,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       localStorage.setItem('kot_user', JSON.stringify(data.user));
       setUser(data.user);
       const bid = data.user.branch_id || data.user.branchId;
+      // Always set/overwrite branchId from server on login
       if (bid) setBranchId(bid);
+      else localStorage.removeItem('kot_branchId');
     },
     [setBranchId]
   );
