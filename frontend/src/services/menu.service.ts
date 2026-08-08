@@ -15,6 +15,11 @@ interface MenuItemFilters {
   search?: string;
 }
 
+interface ImportResult {
+  success: Array<{ row: number; name: string; sku: string }>;
+  failed: Array<{ row: number; data: any; error: string }>;
+}
+
 class MenuService {
   private readonly BASE_PATH = '/menu-items';
 
@@ -76,6 +81,56 @@ class MenuService {
   async toggleAvailability(id: string): Promise<MenuItem> {
     const response = await apiService.patch<ApiResponse<MenuItem>>(
       `${this.BASE_PATH}/${id}/availability`
+    );
+    return response.data.data;
+  }
+
+  async uploadImage(file: File): Promise<{ imageUrl: string; filename: string }> {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await apiService.post<ApiResponse<{ imageUrl: string; filename: string }>>(
+      `${this.BASE_PATH}/upload-image`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data.data;
+  }
+
+  async exportTemplate(): Promise<Blob> {
+    const response = await apiService.get(`${this.BASE_PATH}/export/template`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  }
+
+  async exportMenus(filters?: { categoryId?: string; isAvailable?: boolean }): Promise<Blob> {
+    const params = new URLSearchParams();
+    if (filters?.categoryId) params.append('categoryId', filters.categoryId);
+    if (filters?.isAvailable !== undefined) params.append('isAvailable', String(filters.isAvailable));
+
+    const response = await apiService.get(`${this.BASE_PATH}/export/data?${params.toString()}`, {
+      responseType: 'blob',
+    });
+    return response.data;
+  }
+
+  async importMenus(file: File): Promise<ImportResult> {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await apiService.post<ApiResponse<ImportResult>>(
+      `${this.BASE_PATH}/import`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
     );
     return response.data.data;
   }

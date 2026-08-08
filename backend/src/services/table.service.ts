@@ -19,7 +19,7 @@ export class TableService {
         table_type: data.table_type || data.tableType,
         capacity: data.capacity,
         table_status: data.table_status || data.status || TableStatus.AVAILABLE,
-        shape: data.shape,
+        shape: data.shape || 'square',
         dining_area: data.dining_area || data.location || null,
       };
 
@@ -73,13 +73,19 @@ export class TableService {
       const table = await this.tableRepository.findOne({ where: { id } });
       if (!table) throw new Error('Table not found');
 
-      const payload: Record<string, any> = { ...data };
-      if (data.tableNumber !== undefined) payload.table_number = data.tableNumber;
-      if (data.branchId !== undefined) payload.branch_id = data.branchId;
-      if (data.status !== undefined) payload.table_status = data.status;
-      if (data.location !== undefined) payload.dining_area = data.location;
-
-      Object.assign(table, payload);
+      if (data.tableNumber !== undefined) table.table_number = data.tableNumber;
+      if (data.name !== undefined) table.name = data.name;
+      if (data.capacity !== undefined) table.capacity = data.capacity;
+      if (data.branchId !== undefined) table.branch_id = data.branchId;
+      if (data.tableType !== undefined) table.table_type = data.tableType;
+      if (data.shape !== undefined) table.shape = data.shape;
+      if (data.status !== undefined) table.table_status = data.status as TableStatus;
+      if (data.location !== undefined) table.dining_area = data.location;
+      if (data.table_number !== undefined) table.table_number = data.table_number;
+      if (data.branch_id !== undefined) table.branch_id = data.branch_id;
+      if (data.table_status !== undefined) table.table_status = data.table_status;
+      if (data.dining_area !== undefined) table.dining_area = data.dining_area;
+      if (data.table_type !== undefined) table.table_type = data.table_type;
       await this.tableRepository.save(table);
       logger.info(`Table updated: ${id}`);
       return table;

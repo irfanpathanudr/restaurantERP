@@ -1,5 +1,6 @@
 import AppDataSource from '../config/database';
 import { MenuItem } from '../database/entities/MenuItem.entity';
+import { Category } from '../database/entities/Category.entity';
 import { CreateMenuItemDto } from '../dto/menu-item/CreateMenuItemDto';
 import { UpdateMenuItemDto } from '../dto/menu-item/UpdateMenuItemDto';
 import logger from '../config/logger';
@@ -8,6 +9,22 @@ import { Repository } from 'typeorm';
 export class MenuItemService {
   private get menuItemRepository(): Repository<MenuItem> {
     return AppDataSource.getRepository(MenuItem);
+  }
+
+  private get categoryRepository(): Repository<Category> {
+    return AppDataSource.getRepository(Category);
+  }
+
+  async getAllCategories(): Promise<Category[]> {
+    try {
+      return await this.categoryRepository.find({
+        where: { is_active: true },
+        order: { sort_order: 'ASC', name: 'ASC' },
+      });
+    } catch (error) {
+      logger.error('Error fetching categories:', error);
+      throw error;
+    }
   }
 
   async create(data: CreateMenuItemDto): Promise<MenuItem> {

@@ -231,35 +231,30 @@ restaurant-management/
    npm install
    ```
 
-3. **Setup environment variables**
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
+3. **One-click start (Windows — recommended)**
 
-4. **Start with Docker Compose** (Recommended)
-   ```bash
-   docker-compose up -d
-   ```
+   Double-click **`START_ALL.bat`** in the project root.
 
-   Or **start manually**:
+   It will:
+   - Auto-detect your PC LAN IP
+   - Update `backend/.env`, `frontend/.env`, and `kot/.env` (API URL + CORS)
+   - Install missing dependencies
+   - Open Backend (5000), Frontend (3000), and KOT (3001) in separate windows
 
+   Stop everything with **`STOP_ALL.bat`**.
+
+   First-time DB setup (once): run **`SETUP_SCRIPT.bat`**, or:
    ```bash
-   # Start backend
    cd backend
-   npm install
-   npm run dev
-
-   # Start frontend (in another terminal)
-   cd frontend
-   npm install
-   npm run dev
+   npm run migration:run
+   npm run seed
    ```
 
-5. **Access the application**
-   - Frontend: http://localhost:3000
+4. **Access the application**
+   - Frontend: http://localhost:3000  (or http://YOUR_LAN_IP:3000)
+   - KOT app: http://localhost:3001  (phone: http://YOUR_LAN_IP:3001)
    - Backend API: http://localhost:5000
-   - API Documentation: http://localhost:5000/api-docs
+   - Login: `admin@example.com` / `admin123`
 
 ### Database Setup
 

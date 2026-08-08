@@ -1,9 +1,17 @@
-import { IsNotEmpty, IsString, IsEmail, IsOptional, IsJSON } from 'class-validator';
+import { IsNotEmpty, IsString, IsEmail, IsOptional } from 'class-validator';
 
 export class CreateRestaurantDto {
   @IsNotEmpty()
   @IsString()
   name: string;
+
+  @IsNotEmpty()
+  @IsString()
+  code: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
 
   @IsOptional()
   @IsString()
@@ -33,17 +41,21 @@ export class CreateRestaurantDto {
   @IsString()
   phone: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsEmail()
-  email: string;
+  email?: string;
 
   @IsOptional()
   @IsString()
-  gstNumber?: string;
+  website?: string;
 
   @IsOptional()
   @IsString()
-  fssaiNumber?: string;
+  gst_number?: string;
+
+  @IsOptional()
+  @IsString()
+  fssai_license?: string;
 
   @IsOptional()
   @IsString()
@@ -52,8 +64,4 @@ export class CreateRestaurantDto {
   @IsOptional()
   @IsString()
   timezone?: string;
-
-  @IsOptional()
-  @IsJSON()
-  settings?: string;
 }

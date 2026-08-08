@@ -133,6 +133,17 @@ export async function createInvoice(orderId: string, notes?: string) {
   return res.data.data;
 }
 
+export async function updateOrderDetails(orderId: string, data: {
+  discountType?: 'percentage' | 'fixed';
+  discountValue?: number;
+  discountReason?: string;
+  taxPercentage?: number;
+  serviceCharge?: number;
+}) {
+  const res = await api.patch(`/orders/${orderId}`, data);
+  return res.data.data;
+}
+
 export function cartToPayload(cart: CartLine[]) {
   return cart.map((c) => ({
     menuItemId: c.menuItemId,

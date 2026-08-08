@@ -1,0 +1,21 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle with gradient -->
+  <circle cx="32" cy="32" r="32" fill="url(#grad1)"/>
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F59E0B;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#D97706;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Chef hat -->
+  <path d="M32 12C27 12 23 15 23 19C23 19 22 19 22 20C20 20 18 22 18 25C18 28 20 30 23 30H41C44 30 46 28 46 25C46 22 44 20 42 20C42 19 41 19 41 19C41 15 37 12 32 12Z" fill="white"/>
+  <path d="M23 28H41V35C41 36 40 37 39 37H25C24 37 23 36 23 35V28Z" fill="white"/>
+  
+  <!-- Cooking pot/pan -->
+  <g transform="translate(18, 40)">
+    <rect x="2" y="0" width="24" height="16" rx="2" fill="#FFF"/>
+    <rect x="0" y="6" width="4" height="4" rx="2" fill="#E5E7EB"/>
+    <ellipse cx="14" cy="8" rx="6" ry="4" fill="#F59E0B" opacity="0.4"/>
+  </g>
+</svg>

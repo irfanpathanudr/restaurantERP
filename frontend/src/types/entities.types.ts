@@ -170,15 +170,20 @@ export interface Permission extends BaseEntity {
 export interface Restaurant extends BaseEntity {
   name: string;
   code: string;
+  description?: string | null;
   address?: string;
   city?: string;
   state?: string;
   country?: string;
-  zip_code?: string;
+  pincode?: string;
   phone?: string;
-  email?: string;
-  website?: string;
-  logo_url?: string;
+  email?: string | null;
+  website?: string | null;
+  logo?: string | null;
+  gst_number?: string | null;
+  fssai_license?: string | null;
+  currency?: string;
+  timezone?: string;
   is_active: boolean;
 }
 
@@ -186,12 +191,17 @@ export interface Branch extends BaseEntity {
   restaurant_id: string;
   name: string;
   code: string;
+  description?: string | null;
   address?: string;
   city?: string;
   state?: string;
-  zip_code?: string;
+  country?: string;
+  pincode?: string;
   phone?: string;
-  email?: string;
+  email?: string | null;
+  gst_number?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   is_active: boolean;
   restaurant?: Restaurant;
 }

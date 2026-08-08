@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Favicon Generator - KOT</title>
+</head>
+<body>
+    <h2>KOT Favicon Generator</h2>
+    <p>Open this file in a browser, right-click on the canvas, and save as PNG</p>
+    <canvas id="canvas" width="512" height="512"></canvas>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Background gradient
+        const gradient = ctx.createLinearGradient(0, 0, 512, 512);
+        gradient.addColorStop(0, '#F59E0B');
+        gradient.addColorStop(1, '#D97706');
+        
+        // Draw circle background
+        ctx.beginPath();
+        ctx.arc(256, 256, 256, 0, 2 * Math.PI);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        
+        // Draw chef hat top
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        ctx.arc(200, 160, 40, 0, 2 * Math.PI);
+        ctx.arc(256, 140, 50, 0, 2 * Math.PI);
+        ctx.arc(312, 160, 40, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Draw chef hat base
+        ctx.fillStyle = 'white';
+        ctx.fillRect(180, 180, 152, 80);
+        ctx.beginPath();
+        ctx.arc(180, 220, 20, Math.PI/2, 3*Math.PI/2);
+        ctx.arc(332, 220, 20, 3*Math.PI/2, Math.PI/2);
+        ctx.fill();
+        ctx.fillRect(180, 200, 152, 40);
+        
+        // Draw cooking pot
+        ctx.fillStyle = 'white';
+        ctx.fillRect(200, 320, 112, 80);
+        ctx.beginPath();
+        ctx.arc(200, 360, 16, Math.PI/2, 3*Math.PI/2);
+        ctx.arc(312, 360, 16, 3*Math.PI/2, Math.PI/2);
+        ctx.fill();
+        
+        // Draw pot handle
+        ctx.fillStyle = '#E5E7EB';
+        ctx.fillRect(170, 340, 30, 40);
+        ctx.beginPath();
+        ctx.arc(185, 340, 15, Math.PI, 0);
+        ctx.arc(185, 380, 15, 0, Math.PI);
+        ctx.fill();
+        
+        // Draw steam/food indicator
+        ctx.fillStyle = 'rgba(245, 158, 11, 0.4)';
+        ctx.beginPath();
+        ctx.ellipse(256, 360, 40, 25, 0, 0, 2 * Math.PI);
+        ctx.fill();
+    </script>
+</body>
+</html>

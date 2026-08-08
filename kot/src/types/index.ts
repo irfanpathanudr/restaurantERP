@@ -43,6 +43,7 @@ export interface MenuItem {
   food_type?: string;
   description?: string | null;
   sku?: string;
+  image?: string | null;
   kitchens?: { id: string; name: string }[];
 }
 
@@ -86,6 +87,8 @@ export interface Order {
   special_instructions?: string | null;
   table?: Table | null;
   order_items?: OrderItem[];
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface KotItem {

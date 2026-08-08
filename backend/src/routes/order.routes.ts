@@ -18,6 +18,7 @@ router.get('/table/:tableId/active', checkPermission('orders.read'), orderContro
 router.get('/:id', checkPermission('orders.read'), orderController.findById);
 router.post('/', checkPermission('orders.create'), validateDTO(CreateOrderDto), orderController.create);
 router.put('/:id', checkPermission('orders.update'), validateDTO(UpdateOrderDto), orderController.update);
+router.patch('/:id', checkPermission('orders.update'), validateDTO(UpdateOrderDto), orderController.update);
 router.post(
   '/:id/items',
   checkPermission('orders.update'),

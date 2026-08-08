@@ -1,4 +1,5 @@
-import { IsString, IsEmail, IsOptional, IsJSON } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsUUID, IsNumber, IsBoolean } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class UpdateBranchDto {
   @IsOptional()
@@ -8,6 +9,14 @@ export class UpdateBranchDto {
   @IsOptional()
   @IsString()
   code?: string;
+
+  @IsOptional()
+  @IsUUID()
+  restaurant_id?: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
 
   @IsOptional()
   @IsString()
@@ -39,13 +48,19 @@ export class UpdateBranchDto {
 
   @IsOptional()
   @IsString()
-  managerName?: string;
+  gst_number?: string;
 
   @IsOptional()
-  @IsString()
-  managerPhone?: string;
+  @Type(() => Number)
+  @IsNumber()
+  latitude?: number;
 
   @IsOptional()
-  @IsJSON()
-  settings?: string;
+  @Type(() => Number)
+  @IsNumber()
+  longitude?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  is_active?: boolean;
 }

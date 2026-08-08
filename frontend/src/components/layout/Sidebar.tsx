@@ -28,6 +28,7 @@ import {
   Store,
   Building2,
   FolderTree,
+  FolderOpen,
   ChefHat,
   CalendarCheck,
   UserCog,
@@ -101,6 +102,12 @@ const menuGroups: MenuGroup[] = [
     name: 'Menu',
     icon: <Utensils className="h-5 w-5" />,
     items: [
+      {
+        name: 'Categories',
+        path: '/categories',
+        icon: <FolderOpen className="h-5 w-5" />,
+        permission: 'menu.read',
+      },
       {
         name: 'Menu Items',
         path: '/menu',
@@ -389,7 +396,7 @@ export const Sidebar: React.FC = () => {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-hide">
             {menuGroups.map((group) => {
               // Filter items based on permissions
               const visibleItems = group.items.filter(item => hasPermission(item.permission));

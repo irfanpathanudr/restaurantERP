@@ -5,37 +5,16 @@ import { setPageTitle } from '@/store/slices/uiSlice';
 import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/common/Button';
 import { Modal } from '@/components/common/Modal';
-import { apiService } from '@/services/api.service';
-import { Plus, Edit, Trash2, MapPin, Building } from 'lucide-react';
+import { branchService } from '@/services/branch.service';
+import { Branch } from '@/types/entities.types';
+import { Plus, Edit, Trash2, MapPin, Phone, Mail, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
-
-interface Branch {
-  id: string;
-  name: string;
-  code: string;
-  restaurant_id: string;
-  phone: string;
-  email?: string;
-  address: string;
-  city: string;
-  state: string;
-  country: string;
-  pincode: string;
-  restaurant?: {
-    id: string;
-    name: string;
-  };
-}
-
-interface Restaurant {
-  id: string;
-  name: string;
-}
+import { cn } from '@/utils/cn';
 
 const BranchesPage: React.FC = () => {
   const dispatch = useDispatch();
+  
   const [branches, setBranches] = useState<Branch[]>([]);
-  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -43,40 +22,34 @@ const BranchesPage: React.FC = () => {
   const [formData, setFormData] = useState({
     name: '',
     code: '',
+    description: '',
     restaurant_id: '',
-    phone: '',
-    email: '',
     address: '',
     city: '',
     state: '',
-    country: 'India',
+    country: '',
     pincode: '',
+    phone: '',
+    email: '',
+    gst_number: '',
+    latitude: '',
+    longitude: '',
   });
 
   useEffect(() => {
-    dispatch(setPageTitle('Branches'));
+    dispatch(setPageTitle('Branch Management'));
     fetchBranches();
-    fetchRestaurants();
   }, [dispatch]);
 
   const fetchBranches = async () => {
     try {
       setLoading(true);
-      const response = await apiService.get('/branches');
-      setBranches(response.data.data || []);
+      const data = await branchService.findAll();
+      setBranches(data || []);
     } catch (error) {
       toast.error('Failed to fetch branches');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchRestaurants = async () => {
-    try {
-      const response = await apiService.get('/restaurants');
-      setRestaurants(response.data.data || []);
-    } catch (error) {
-      toast.error('Failed to fetch restaurants');
     }
   };
 
@@ -85,14 +58,18 @@ const BranchesPage: React.FC = () => {
     setFormData({
       name: '',
       code: '',
+      description: '',
       restaurant_id: '',
-      phone: '',
-      email: '',
       address: '',
       city: '',
       state: '',
-      country: 'India',
+      country: '',
       pincode: '',
+      phone: '',
+      email: '',
+      gst_number: '',
+      latitude: '',
+      longitude: '',
     });
     setShowModal(true);
   };
@@ -102,14 +79,18 @@ const BranchesPage: React.FC = () => {
     setFormData({
       name: branch.name,
       code: branch.code,
+      description: branch.description || '',
       restaurant_id: branch.restaurant_id,
-      phone: branch.phone,
-      email: branch.email || '',
       address: branch.address,
       city: branch.city,
       state: branch.state,
       country: branch.country,
       pincode: branch.pincode,
+      phone: branch.phone,
+      email: branch.email || '',
+      gst_number: branch.gst_number || '',
+      latitude: branch.latitude?.toString() || '',
+      longitude: branch.longitude?.toString() || '',
     });
     setShowModal(true);
   };
@@ -122,24 +103,20 @@ const BranchesPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const submitData = {
-        name: formData.name,
-        code: formData.code,
-        restaurant_id: formData.restaurant_id,
-        phone: formData.phone,
-        email: formData.email || undefined,
-        address: formData.address,
-        city: formData.city,
-        state: formData.state,
-        country: formData.country,
-        pincode: formData.pincode,
+      const submitData: any = {
+        ...formData,
+        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
+        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
+        email: formData.email || null,
+        gst_number: formData.gst_number || null,
+        description: formData.description || null,
       };
 
       if (selectedBranch) {
-        await apiService.put(`/branches/${selectedBranch.id}`, submitData);
+        await branchService.update(selectedBranch.id, submitData);
         toast.success('Branch updated successfully');
       } else {
-        await apiService.post('/branches', submitData);
+        await branchService.create(submitData);
         toast.success('Branch created successfully');
       }
       setShowModal(false);
@@ -152,7 +129,7 @@ const BranchesPage: React.FC = () => {
   const confirmDelete = async () => {
     if (!selectedBranch) return;
     try {
-      await apiService.delete(`/branches/${selectedBranch.id}`);
+      await branchService.delete(selectedBranch.id);
       toast.success('Branch deleted successfully');
       setShowDeleteModal(false);
       fetchBranches();
@@ -163,57 +140,82 @@ const BranchesPage: React.FC = () => {
 
   const columns: ColumnDef<Branch>[] = [
     {
-      accessorKey: 'code',
-      header: 'Code',
-      cell: ({ row }) => (
-        <span className="font-mono font-medium">{row.original.code}</span>
-      ),
-    },
-    {
       accessorKey: 'name',
-      header: 'Branch Name',
+      header: 'Branch',
       cell: ({ row }) => (
         <div>
-          <div className="font-medium text-gray-900 dark:text-gray-100">
+          <div className="font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
+            <Building2 className="h-4 w-4 text-blue-500" />
             {row.original.name}
           </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1">
-            <Building className="h-3 w-3" />
-            {row.original.restaurant?.name || '-'}
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            Code: {row.original.code}
           </div>
         </div>
       ),
     },
     {
-      accessorKey: 'phone',
+      accessorKey: 'address',
+      header: 'Location',
+      cell: ({ row }) => (
+        <div className="max-w-xs">
+          <div className="flex items-start gap-1.5 text-sm text-gray-600 dark:text-gray-400">
+            <MapPin className="h-4 w-4 mt-0.5 shrink-0" />
+            <div>
+              <div>{row.original.address}</div>
+              <div className="text-xs">
+                {row.original.city}, {row.original.state} - {row.original.pincode}
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'contact',
       header: 'Contact',
       cell: ({ row }) => (
-        <div className="text-sm">
-          <div>{row.original.phone}</div>
+        <div className="text-sm space-y-1">
+          <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+            <Phone className="h-3.5 w-3.5" />
+            {row.original.phone}
+          </div>
           {row.original.email && (
-            <div className="text-gray-500 dark:text-gray-400">{row.original.email}</div>
+            <div className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400">
+              <Mail className="h-3.5 w-3.5" />
+              {row.original.email}
+            </div>
           )}
         </div>
       ),
     },
     {
-      accessorKey: 'city',
-      header: 'Location',
+      accessorKey: 'gst_number',
+      header: 'GST',
+      cell: ({ row }) => row.original.gst_number || '-',
+    },
+    {
+      accessorKey: 'is_active',
+      header: 'Status',
       cell: ({ row }) => (
-        <div className="text-sm flex items-center gap-1">
-          <MapPin className="h-3 w-3 text-gray-400" />
-          {row.original.city}, {row.original.state}
-        </div>
+        <span className={cn(
+          'px-2 py-1 text-xs font-medium rounded-full',
+          row.original.is_active
+            ? 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400'
+            : 'bg-gray-100 dark:bg-gray-900/30 text-gray-600 dark:text-gray-400'
+        )}>
+          {row.original.is_active ? 'ACTIVE' : 'INACTIVE'}
+        </span>
       ),
     },
     {
       id: 'actions',
       header: 'Actions',
-      cell: ({ row }) => (
+      cell: ({ row }: { row: any }) => (
         <div className="flex items-center gap-2">
-          <Button 
-            size="sm" 
-            variant="ghost" 
+          <Button
+            size="sm"
+            variant="ghost"
             leftIcon={<Edit className="h-4 w-4" />}
             onClick={() => handleEdit(row.original)}
           >
@@ -235,14 +237,17 @@ const BranchesPage: React.FC = () => {
 
   return (
     <div className="p-6 space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Branches</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            Branch Management
+          </h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Manage restaurant branches
+            Manage restaurant branches and locations
           </p>
         </div>
-        <Button 
+        <Button
           leftIcon={<Plus className="h-5 w-5" />}
           onClick={handleCreate}
         >
@@ -250,6 +255,7 @@ const BranchesPage: React.FC = () => {
         </Button>
       </div>
 
+      {/* Data Table */}
       <DataTable
         columns={columns}
         data={branches}
@@ -263,22 +269,10 @@ const BranchesPage: React.FC = () => {
         open={showModal}
         onClose={() => setShowModal(false)}
         title={selectedBranch ? 'Edit Branch' : 'Create Branch'}
-        size="lg"
+        size="xl"
       >
-        <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Branch Code *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.code}
-                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-mono"
-              />
-            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Branch Name *
@@ -289,30 +283,103 @@ const BranchesPage: React.FC = () => {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                placeholder="Main Branch"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Branch Code *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.code}
+                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                placeholder="MAIN-001"
               />
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Restaurant *
+              Description
             </label>
-            <select
-              required
-              value={formData.restaurant_id}
-              onChange={(e) => setFormData({ ...formData, restaurant_id: e.target.value })}
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={2}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-            >
-              <option value="">Select Restaurant</option>
-              {restaurants.map((restaurant) => (
-                <option key={restaurant.id} value={restaurant.id}>
-                  {restaurant.name}
-                </option>
-              ))}
-            </select>
+              placeholder="Branch description..."
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Address *
+            </label>
+            <textarea
+              required
+              value={formData.address}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              rows={2}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              placeholder="Street address"
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                City *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.city}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                State *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.state}
+                onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Country *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.country}
+                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Pincode *
+              </label>
+              <input
+                type="text"
+                required
+                value={formData.pincode}
+                onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Phone *
@@ -338,75 +405,53 @@ const BranchesPage: React.FC = () => {
             </div>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Address *
-            </label>
-            <textarea
-              required
-              rows={2}
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                City *
+                GST Number
               </label>
               <input
                 type="text"
-                required
-                value={formData.city}
-                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                value={formData.gst_number}
+                onChange={(e) => setFormData({ ...formData, gst_number: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                placeholder="22AAAAA0000A1Z5"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                State *
+                Latitude
               </label>
               <input
-                type="text"
-                required
-                value={formData.state}
-                onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                type="number"
+                step="any"
+                value={formData.latitude}
+                onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Country *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.country}
-                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                placeholder="12.9716"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Pincode *
+                Longitude
               </label>
               <input
-                type="text"
-                required
-                value={formData.pincode}
-                onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+                type="number"
+                step="any"
+                value={formData.longitude}
+                onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                placeholder="77.5946"
               />
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" variant="ghost" onClick={() => setShowModal(false)}>
+          <div className="flex justify-end gap-3 pt-4 border-t">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowModal(false)}
+            >
               Cancel
             </Button>
             <Button type="submit">
@@ -424,13 +469,19 @@ const BranchesPage: React.FC = () => {
         size="sm"
       >
         <p className="text-gray-600 dark:text-gray-400">
-          Are you sure you want to delete "{selectedBranch?.name}"? This action cannot be undone.
+          Are you sure you want to delete branch "<strong>{selectedBranch?.name}</strong>"? This action cannot be undone and will affect all associated data.
         </p>
         <div className="flex justify-end gap-3 mt-6">
-          <Button variant="ghost" onClick={() => setShowDeleteModal(false)}>
+          <Button
+            variant="ghost"
+            onClick={() => setShowDeleteModal(false)}
+          >
             Cancel
           </Button>
-          <Button variant="danger" onClick={confirmDelete}>
+          <Button
+            variant="danger"
+            onClick={confirmDelete}
+          >
             Delete
           </Button>
         </div>

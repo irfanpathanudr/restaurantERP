@@ -1,398 +1,893 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useDispatch } from 'react-redux';
+import { ColumnDef } from '@tanstack/react-table';
 import { setPageTitle } from '@/store/slices/uiSlice';
+import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/common/Button';
 import { Modal } from '@/components/common/Modal';
+import { orderService, OrderStatusValue } from '@/services/order.service';
 import { apiService } from '@/services/api.service';
-import { Plus, Search, Minus, ShoppingCart, X, UtensilsCrossed } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import {
+  Plus,
+  Search,
+  Minus,
+  ShoppingCart,
+  X,
+  UtensilsCrossed,
+  Eye,
+  RefreshCw,
+  Ban,
+  CheckCircle2,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
 
 interface MenuItem {
   id: string;
   name: string;
-  sku: string;
+  sku?: string;
   description?: string;
-  price: number;
+  price: number | string;
+  image?: string;
   image_url?: string;
   is_available: boolean;
   preparation_time?: number;
-  is_vegetarian: boolean;
-  is_vegan: boolean;
-  category?: {
-    id: string;
-    name: string;
-  };
+  is_vegetarian?: boolean;
+  is_vegan?: boolean;
+  category?: { id: string; name: string };
 }
 
-interface OrderItem {
+interface CartItem {
   menu_item: MenuItem;
   quantity: number;
   special_instructions?: string;
 }
 
-interface Table {
+interface TableOption {
   id: string;
   table_number: string;
+  name?: string;
   floor?: string;
+  dining_area?: string;
   table_status: string;
 }
 
+interface BranchOption {
+  id: string;
+  name: string;
+}
+
+interface OrderItemRow {
+  id: string;
+  item_name: string;
+  price: number | string;
+  quantity: number;
+  total: number | string;
+  special_instructions?: string | null;
+  menu_item?: MenuItem;
+}
+
+interface OrderRow {
+  id: string;
+  order_number: string;
+  order_type: string;
+  order_status: string;
+  payment_status: string;
+  subtotal: number | string;
+  tax_amount: number | string;
+  discount_amount: number | string;
+  grand_total: number | string;
+  due_amount?: number | string;
+  special_instructions?: string | null;
+  is_locked?: boolean;
+  created_at?: string;
+  ordered_at?: string;
+  table?: { id: string; table_number: string; name?: string } | null;
+  customer?: { id: string; name?: string; first_name?: string; last_name?: string } | null;
+  order_items?: OrderItemRow[];
+  branch?: { id: string; name: string };
+}
+
+const ORDER_STATUSES: OrderStatusValue[] = [
+  'pending',
+  'confirmed',
+  'preparing',
+  'ready',
+  'served',
+  'completed',
+  'cancelled',
+];
+
+const money = (value: number | string | undefined | null) =>
+  `₹${Number(value || 0).toFixed(2)}`;
+
+const formatStatus = (status: string) =>
+  (status || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+const statusColor = (status: string) => {
+  const map: Record<string, string> = {
+    pending: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
+    confirmed: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400',
+    preparing: 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400',
+    ready: 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400',
+    served: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400',
+    completed: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+    cancelled: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400',
+  };
+  return map[status] || 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400';
+};
+
+const paymentColor = (status: string) => {
+  const map: Record<string, string> = {
+    pending: 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400',
+    partial: 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400',
+    paid: 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400',
+    refunded: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400',
+  };
+  return map[status] || map.pending;
+};
+
 const OrdersPage: React.FC = () => {
   const dispatch = useDispatch();
+  const { user } = useAuth();
+
+  const [orders, setOrders] = useState<OrderRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<string>('active');
+  const [selectedOrder, setSelectedOrder] = useState<OrderRow | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  // Create order state
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [filteredItems, setFilteredItems] = useState<MenuItem[]>([]);
-  const [tables, setTables] = useState<Table[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [showOrderModal, setShowOrderModal] = useState(false);
+  const [tables, setTables] = useState<TableOption[]>([]);
+  const [branches, setBranches] = useState<BranchOption[]>([]);
+  const [kitchens, setKitchens] = useState<{ id: string; name: string; branch_id?: string }[]>([]);
+  const [menuLoading, setMenuLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [cart, setCart] = useState<OrderItem[]>([]);
-  const [selectedTable, setSelectedTable] = useState<string>('');
-  const [orderType, setOrderType] = useState<string>('DINE_IN');
-  const [orderNotes, setOrderNotes] = useState<string>('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [selectedTable, setSelectedTable] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState('');
+  const [selectedKitchen, setSelectedKitchen] = useState('');
+  const [orderType, setOrderType] = useState<'dine_in' | 'takeaway' | 'delivery'>('dine_in');
+  const [orderNotes, setOrderNotes] = useState('');
 
-  // Unique categories from menu items
   const categories = [
     { id: 'all', name: 'All Items' },
-    ...Array.from(new Set(menuItems.map(item => item.category?.name).filter(Boolean)))
-      .map(name => ({
-        id: name?.toLowerCase().replace(/\s+/g, '-') || '',
-        name: name || ''
-      }))
+    ...Array.from(new Set(menuItems.map((item) => item.category?.name).filter(Boolean))).map(
+      (name) => ({
+        id: (name as string).toLowerCase().replace(/\s+/g, '-'),
+        name: name as string,
+      })
+    ),
   ];
 
-  useEffect(() => {
-    dispatch(setPageTitle('Orders'));
-    fetchMenuItems();
-    fetchTables();
-  }, [dispatch]);
-
-  useEffect(() => {
-    filterMenuItems();
-  }, [searchQuery, selectedCategory, menuItems]);
-
-  const fetchMenuItems = async () => {
+  const fetchOrders = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await apiService.get('/menu-items?isAvailable=true');
-      setMenuItems(response.data.data || []);
-    } catch (error) {
-      toast.error('Failed to fetch menu items');
+      const params: Record<string, any> = {};
+      if (statusFilter !== 'all' && statusFilter !== 'active') {
+        params.status = statusFilter;
+      }
+      if (user?.branch_id) {
+        params.branchId = user.branch_id;
+      }
+      let data = await orderService.list(params);
+      if (statusFilter === 'active') {
+        data = data.filter(
+          (o: OrderRow) => !['completed', 'cancelled'].includes(o.order_status)
+        );
+      }
+      setOrders(data);
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to fetch orders');
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter, user?.branch_id]);
 
-  const fetchTables = async () => {
-    try {
-      const response = await apiService.get('/tables');
-      setTables(response.data.data || []);
-    } catch (error) {
-      toast.error('Failed to fetch tables');
-    }
-  };
+  useEffect(() => {
+    dispatch(setPageTitle('Orders'));
+    fetchOrders();
+    const timer = setInterval(fetchOrders, 15000);
+    return () => clearInterval(timer);
+  }, [dispatch, fetchOrders]);
 
-  const filterMenuItems = () => {
-    let filtered = menuItems.filter(item => item.is_available);
-
-    // Filter by search query
+  useEffect(() => {
+    let filtered = menuItems.filter((item) => item.is_available !== false);
     if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(item =>
-        item.name.toLowerCase().includes(query) ||
-        item.description?.toLowerCase().includes(query) ||
-        item.sku.toLowerCase().includes(query) ||
-        item.category?.name.toLowerCase().includes(query)
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (item) =>
+          item.name.toLowerCase().includes(q) ||
+          item.description?.toLowerCase().includes(q) ||
+          item.sku?.toLowerCase().includes(q) ||
+          item.category?.name.toLowerCase().includes(q)
       );
     }
-
-    // Filter by category
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(item =>
-        item.category?.name.toLowerCase().replace(/\s+/g, '-') === selectedCategory
+      filtered = filtered.filter(
+        (item) =>
+          item.category?.name.toLowerCase().replace(/\s+/g, '-') === selectedCategory
       );
     }
-
     setFilteredItems(filtered);
+  }, [searchQuery, selectedCategory, menuItems]);
+
+  const fetchCreateData = async () => {
+    try {
+      setMenuLoading(true);
+      const [menuRes, tablesRes, branchesRes, kitchensRes] = await Promise.all([
+        apiService.get('/menu-items', { params: { isAvailable: true } }),
+        apiService.get('/tables'),
+        apiService.get('/branches'),
+        apiService.get('/kitchens'),
+      ]);
+      setMenuItems(menuRes.data.data || []);
+      setTables(tablesRes.data.data || []);
+      const branchList = branchesRes.data.data || [];
+      const kitchenList = kitchensRes.data.data || [];
+      setBranches(branchList);
+      setKitchens(kitchenList);
+      const defaultBranch = user?.branch_id || branchList[0]?.id || '';
+      setSelectedBranch(defaultBranch);
+      const branchKitchens = kitchenList.filter(
+        (k: { branch_id?: string }) => !k.branch_id || k.branch_id === defaultBranch
+      );
+      setSelectedKitchen(branchKitchens[0]?.id || kitchenList[0]?.id || '');
+    } catch {
+      toast.error('Failed to load menu / tables');
+    } finally {
+      setMenuLoading(false);
+    }
+  };
+
+  const openCreate = async () => {
+    setCart([]);
+    setSelectedTable('');
+    setSelectedKitchen('');
+    setOrderNotes('');
+    setOrderType('dine_in');
+    setSearchQuery('');
+    setSelectedCategory('all');
+    setShowCreateModal(true);
+    await fetchCreateData();
+  };
+
+  const openDetail = async (order: OrderRow) => {
+    setShowDetailModal(true);
+    setDetailLoading(true);
+    try {
+      const full = await orderService.get(order.id);
+      setSelectedOrder(full);
+    } catch {
+      setSelectedOrder(order);
+      toast.error('Could not refresh order details');
+    } finally {
+      setDetailLoading(false);
+    }
   };
 
   const addToCart = (menuItem: MenuItem) => {
-    const existingItem = cart.find(item => item.menu_item.id === menuItem.id);
-    
-    if (existingItem) {
-      setCart(cart.map(item =>
-        item.menu_item.id === menuItem.id
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      ));
+    const existing = cart.find((c) => c.menu_item.id === menuItem.id);
+    if (existing) {
+      setCart(
+        cart.map((c) =>
+          c.menu_item.id === menuItem.id ? { ...c, quantity: c.quantity + 1 } : c
+        )
+      );
     } else {
       setCart([...cart, { menu_item: menuItem, quantity: 1 }]);
     }
-    toast.success(`${menuItem.name} added to cart`);
-  };
-
-  const removeFromCart = (menuItemId: string) => {
-    setCart(cart.filter(item => item.menu_item.id !== menuItemId));
   };
 
   const updateQuantity = (menuItemId: string, delta: number) => {
-    setCart(cart.map(item => {
-      if (item.menu_item.id === menuItemId) {
-        const newQuantity = item.quantity + delta;
-        return newQuantity > 0 ? { ...item, quantity: newQuantity } : item;
-      }
-      return item;
-    }).filter(item => item.quantity > 0));
+    setCart(
+      cart
+        .map((item) => {
+          if (item.menu_item.id !== menuItemId) return item;
+          return { ...item, quantity: item.quantity + delta };
+        })
+        .filter((item) => item.quantity > 0)
+    );
   };
 
-  const calculateTotal = () => {
-    return cart.reduce((sum, item) => sum + (item.menu_item.price * item.quantity), 0);
-  };
+  const cartTotal = cart.reduce(
+    (sum, item) => sum + Number(item.menu_item.price || 0) * item.quantity,
+    0
+  );
 
   const handleCreateOrder = async () => {
     if (cart.length === 0) {
       toast.error('Please add items to cart');
       return;
     }
-
-    if (orderType === 'DINE_IN' && !selectedTable) {
+    if (!selectedBranch) {
+      toast.error('Please select a branch');
+      return;
+    }
+    if (orderType === 'dine_in' && !selectedTable) {
       toast.error('Please select a table');
       return;
     }
 
     try {
-      const orderData = {
-        order_type: orderType,
-        table_id: orderType === 'DINE_IN' ? selectedTable : undefined,
+      setActionLoading(true);
+      await orderService.create({
+        branchId: selectedBranch,
+        orderType,
+        tableId: orderType === 'dine_in' ? selectedTable : undefined,
         notes: orderNotes || undefined,
-        items: cart.map(item => ({
-          menu_item_id: item.menu_item.id,
+        kitchenId: selectedKitchen || undefined,
+        createKot: Boolean(selectedKitchen),
+        items: cart.map((item) => ({
+          menuItemId: item.menu_item.id,
           quantity: item.quantity,
-          unit_price: item.menu_item.price,
-          special_instructions: item.special_instructions || undefined,
+          unitPrice: Number(item.menu_item.price || 0),
+          specialInstructions: item.special_instructions,
         })),
-      };
-
-      await apiService.post('/orders', orderData);
+      });
       toast.success('Order created successfully');
-      
-      // Reset form
-      setCart([]);
-      setSelectedTable('');
-      setOrderNotes('');
-      setShowOrderModal(false);
+      setShowCreateModal(false);
+      fetchOrders();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Failed to create order');
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  const handleNewOrder = () => {
-    setCart([]);
-    setSelectedTable('');
-    setOrderNotes('');
-    setOrderType('DINE_IN');
-    setSearchQuery('');
-    setSelectedCategory('all');
-    setShowOrderModal(true);
+  const handleStatusChange = async (orderId: string, status: OrderStatusValue) => {
+    try {
+      setActionLoading(true);
+      const updated = await orderService.updateStatus(orderId, status);
+      setSelectedOrder(updated);
+      toast.success(`Status updated to ${formatStatus(status)}`);
+      fetchOrders();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update status');
+    } finally {
+      setActionLoading(false);
+    }
   };
+
+  const handleComplete = async (orderId: string) => {
+    try {
+      setActionLoading(true);
+      const updated = await orderService.complete(orderId);
+      setSelectedOrder(updated);
+      toast.success('Order completed');
+      fetchOrders();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to complete order');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleCancel = async (orderId: string) => {
+    if (!window.confirm('Cancel this order?')) return;
+    try {
+      setActionLoading(true);
+      const updated = await orderService.cancel(orderId);
+      setSelectedOrder(updated);
+      toast.success('Order cancelled');
+      fetchOrders();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to cancel order');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleItemQty = async (itemId: string, quantity: number) => {
+    if (!selectedOrder) return;
+    try {
+      setActionLoading(true);
+      const updated =
+        quantity <= 0
+          ? await orderService.removeItem(selectedOrder.id, itemId)
+          : await orderService.updateItemQuantity(selectedOrder.id, itemId, quantity);
+      setSelectedOrder(updated);
+      fetchOrders();
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to update item');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const columns: ColumnDef<OrderRow>[] = [
+    {
+      accessorKey: 'order_number',
+      header: 'Order #',
+      cell: ({ row }) => (
+        <span className="font-mono font-semibold text-gray-900 dark:text-gray-100">
+          {row.original.order_number}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'table',
+      header: 'Table',
+      cell: ({ row }) =>
+        row.original.table?.table_number
+          ? `Table ${row.original.table.table_number}`
+          : formatStatus(row.original.order_type),
+    },
+    {
+      accessorKey: 'order_type',
+      header: 'Type',
+      cell: ({ row }) => (
+        <span className="capitalize">{formatStatus(row.original.order_type)}</span>
+      ),
+    },
+    {
+      accessorKey: 'order_status',
+      header: 'Status',
+      cell: ({ row }) => (
+        <span
+          className={cn(
+            'px-2 py-1 text-xs font-medium rounded-full capitalize',
+            statusColor(row.original.order_status)
+          )}
+        >
+          {formatStatus(row.original.order_status)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'payment_status',
+      header: 'Payment',
+      cell: ({ row }) => (
+        <span
+          className={cn(
+            'px-2 py-1 text-xs font-medium rounded-full capitalize',
+            paymentColor(row.original.payment_status)
+          )}
+        >
+          {formatStatus(row.original.payment_status)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'order_items',
+      header: 'Items',
+      cell: ({ row }) => row.original.order_items?.length || 0,
+    },
+    {
+      accessorKey: 'grand_total',
+      header: 'Total',
+      cell: ({ row }) => (
+        <span className="font-semibold text-gray-900 dark:text-gray-100">
+          {money(row.original.grand_total)}
+        </span>
+      ),
+    },
+    {
+      accessorKey: 'created_at',
+      header: 'Time',
+      cell: ({ row }) => {
+        const ts = row.original.ordered_at || row.original.created_at;
+        return ts ? new Date(ts).toLocaleString() : '-';
+      },
+    },
+    {
+      id: 'actions',
+      header: 'Actions',
+      cell: ({ row }) => (
+        <Button
+          size="sm"
+          variant="ghost"
+          leftIcon={<Eye className="h-4 w-4" />}
+          onClick={() => openDetail(row.original)}
+        >
+          View
+        </Button>
+      ),
+    },
+  ];
+
+  const isEditable =
+    selectedOrder &&
+    !selectedOrder.is_locked &&
+    !['completed', 'cancelled'].includes(selectedOrder.order_status);
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
             Order Management
           </h1>
           <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Create and manage restaurant orders
+            Monitor and manage orders from KOT and walk-in guests
           </p>
         </div>
-        <Button
-          leftIcon={<Plus className="h-5 w-5" />}
-          onClick={handleNewOrder}
-        >
-          New Order
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            leftIcon={<RefreshCw className="h-4 w-4" />}
+            onClick={fetchOrders}
+          >
+            Refresh
+          </Button>
+          <Button leftIcon={<Plus className="h-5 w-5" />} onClick={openCreate}>
+            New Order
+          </Button>
+        </div>
       </div>
 
-      {/* Order List/History would go here */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <p className="text-center text-gray-500 dark:text-gray-400">
-          Order history and management coming soon...
-        </p>
+      <div className="flex flex-wrap gap-2">
+        {[
+          { id: 'active', label: 'Active' },
+          { id: 'all', label: 'All' },
+          ...ORDER_STATUSES.map((s) => ({ id: s, label: formatStatus(s) })),
+        ].map((filter) => (
+          <button
+            key={filter.id}
+            onClick={() => setStatusFilter(filter.id)}
+            className={cn(
+              'px-3 py-1.5 rounded-lg text-sm font-medium transition-colors',
+              statusFilter === filter.id
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'
+            )}
+          >
+            {filter.label}
+          </button>
+        ))}
       </div>
 
-      {/* Create Order Modal */}
+      <DataTable
+        columns={columns}
+        data={orders}
+        loading={loading}
+        searchPlaceholder="Search orders..."
+        onRefresh={fetchOrders}
+      />
+
+      {/* Order Detail Modal */}
       <Modal
-        open={showOrderModal}
-        onClose={() => setShowOrderModal(false)}
-        title="Create New Order"
-        size="full"
+        open={showDetailModal}
+        onClose={() => setShowDetailModal(false)}
+        title={selectedOrder ? `Order ${selectedOrder.order_number}` : 'Order Details'}
+        size="xl"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-12rem)]">
-          {/* Menu Items Section */}
-          <div className="lg:col-span-2 flex flex-col space-y-4 overflow-hidden">
-            {/* Search and Filters */}
-            <div className="space-y-3">
-              {/* Search Bar */}
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search menu items by name, category, or SKU..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+        {detailLoading || !selectedOrder ? (
+          <div className="py-12 text-center text-gray-500">Loading...</div>
+        ) : (
+          <div className="space-y-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Table / Type</p>
+                <p className="font-medium text-gray-900 dark:text-gray-100">
+                  {selectedOrder.table?.table_number
+                    ? `Table ${selectedOrder.table.table_number}`
+                    : formatStatus(selectedOrder.order_type)}
+                </p>
               </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Status</p>
+                <span
+                  className={cn(
+                    'inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded-full capitalize',
+                    statusColor(selectedOrder.order_status)
+                  )}
+                >
+                  {formatStatus(selectedOrder.order_status)}
+                </span>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Payment</p>
+                <span
+                  className={cn(
+                    'inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded-full capitalize',
+                    paymentColor(selectedOrder.payment_status)
+                  )}
+                >
+                  {formatStatus(selectedOrder.payment_status)}
+                </span>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Total</p>
+                <p className="font-bold text-lg text-blue-600 dark:text-blue-400">
+                  {money(selectedOrder.grand_total)}
+                </p>
+              </div>
+            </div>
 
-              {/* Category Filter */}
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                {categories.map(category => (
-                  <button
-                    key={category.id}
-                    onClick={() => setSelectedCategory(category.id)}
-                    className={cn(
-                      'px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-colors',
-                      selectedCategory === category.id
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                    )}
+            {selectedOrder.special_instructions && (
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 p-3 text-sm text-amber-800 dark:text-amber-300">
+                Notes: {selectedOrder.special_instructions}
+              </div>
+            )}
+
+            <div>
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Items</h3>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {(selectedOrder.order_items || []).map((item) => (
+                  <div
+                    key={item.id}
+                    className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-gray-700 p-3"
                   >
-                    {category.name}
-                  </button>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                        {item.item_name || item.menu_item?.name}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {money(item.price)} × {item.quantity}
+                        {item.special_instructions ? ` · ${item.special_instructions}` : ''}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      {isEditable && (
+                        <div className="flex items-center gap-1">
+                          <button
+                            disabled={actionLoading}
+                            onClick={() => handleItemQty(item.id, item.quantity - 1)}
+                            className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
+                          >
+                            <Minus className="h-3 w-3" />
+                          </button>
+                          <span className="w-6 text-center text-sm">{item.quantity}</span>
+                          <button
+                            disabled={actionLoading}
+                            onClick={() => handleItemQty(item.id, item.quantity + 1)}
+                            className="w-7 h-7 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        </div>
+                      )}
+                      <span className="font-semibold w-20 text-right">
+                        {money(item.total)}
+                      </span>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
 
-            {/* Menu Items Grid */}
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span className="text-gray-500">Subtotal</span>
+                <span>{money(selectedOrder.subtotal)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Tax</span>
+                <span>{money(selectedOrder.tax_amount)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-500">Discount</span>
+                <span>-{money(selectedOrder.discount_amount)}</span>
+              </div>
+              <div className="flex justify-between font-bold text-base">
+                <span>Grand Total</span>
+                <span>{money(selectedOrder.grand_total)}</span>
+              </div>
+            </div>
+
+            {isEditable && (
+              <div className="flex flex-col gap-3 border-t border-gray-200 dark:border-gray-700 pt-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Update status:
+                  </label>
+                  <select
+                    disabled={actionLoading}
+                    value={selectedOrder.order_status}
+                    onChange={(e) =>
+                      handleStatusChange(
+                        selectedOrder.id,
+                        e.target.value as OrderStatusValue
+                      )
+                    }
+                    className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm"
+                  >
+                    {ORDER_STATUSES.filter((s) => s !== 'cancelled').map((s) => (
+                      <option key={s} value={s}>
+                        {formatStatus(s)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex flex-wrap gap-2 justify-end">
+                  <Button
+                    variant="outline"
+                    leftIcon={<Ban className="h-4 w-4" />}
+                    disabled={actionLoading}
+                    onClick={() => handleCancel(selectedOrder.id)}
+                    className="text-red-600"
+                  >
+                    Cancel Order
+                  </Button>
+                  <Button
+                    leftIcon={<CheckCircle2 className="h-4 w-4" />}
+                    disabled={actionLoading}
+                    onClick={() => handleComplete(selectedOrder.id)}
+                  >
+                    Complete
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Create Order Modal */}
+      <Modal
+        open={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title="Create New Order"
+        size="full"
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-12rem)]">
+          <div className="lg:col-span-2 flex flex-col space-y-4 overflow-hidden">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search menu items..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+              />
+            </div>
+
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={cn(
+                    'px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap',
+                    selectedCategory === category.id
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
+                  )}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+
             <div className="flex-1 overflow-y-auto">
-              {loading ? (
+              {menuLoading ? (
                 <div className="flex items-center justify-center h-64">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
                 </div>
               ) : filteredItems.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+                <div className="flex flex-col items-center justify-center h-64 text-gray-500">
                   <UtensilsCrossed className="h-16 w-16 mb-4 opacity-50" />
                   <p>No menu items found</p>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {filteredItems.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => addToCart(item)}
-                      className="bg-white dark:bg-gray-700 rounded-lg shadow hover:shadow-lg transition-shadow duration-200 overflow-hidden text-left group"
-                    >
-                      {/* Item Image */}
-                      <div className="aspect-square bg-gray-200 dark:bg-gray-600 relative overflow-hidden">
-                        {item.image_url ? (
-                          <img
-                            src={item.image_url}
-                            alt={item.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <UtensilsCrossed className="h-12 w-12 text-gray-400 dark:text-gray-500" />
-                          </div>
-                        )}
-                        
-                        {/* Badges */}
-                        <div className="absolute top-2 right-2 flex flex-col gap-1">
-                          {item.is_vegan && (
-                            <span className="px-2 py-0.5 text-xs font-bold bg-green-500 text-white rounded-full">
-                              Vegan
-                            </span>
-                          )}
-                          {item.is_vegetarian && !item.is_vegan && (
-                            <span className="px-2 py-0.5 text-xs font-bold bg-green-400 text-white rounded-full">
-                              Veg
-                            </span>
+                  {filteredItems.map((item) => {
+                    const img = item.image || item.image_url;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => addToCart(item)}
+                        className="bg-white dark:bg-gray-700 rounded-lg shadow hover:shadow-lg overflow-hidden text-left"
+                      >
+                        <div className="aspect-square bg-gray-200 dark:bg-gray-600 relative">
+                          {img ? (
+                            <img
+                              src={img}
+                              alt={item.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <UtensilsCrossed className="h-12 w-12 text-gray-400" />
+                            </div>
                           )}
                         </div>
-                      </div>
-
-                      {/* Item Details */}
-                      <div className="p-3">
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">
-                          {item.name}
-                        </h3>
-                        {item.category && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                            {item.category.name}
-                          </p>
-                        )}
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
-                            ${item.price.toFixed(2)}
+                        <div className="p-3">
+                          <h3 className="font-semibold text-gray-900 dark:text-gray-100 line-clamp-1">
+                            {item.name}
+                          </h3>
+                          {item.category && (
+                            <p className="text-xs text-gray-500 mt-0.5">{item.category.name}</p>
+                          )}
+                          <span className="text-lg font-bold text-blue-600 dark:text-blue-400 mt-2 block">
+                            {money(item.price)}
                           </span>
-                          {item.preparation_time && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {item.preparation_time} min
-                            </span>
-                          )}
                         </div>
-                      </div>
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  })}
                 </div>
               )}
             </div>
           </div>
 
-          {/* Cart Section */}
           <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 flex flex-col space-y-4">
             <div className="flex items-center gap-2 pb-3 border-b border-gray-200 dark:border-gray-700">
-              <ShoppingCart className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100">
-                Order Cart ({cart.length})
-              </h3>
+              <ShoppingCart className="h-5 w-5" />
+              <h3 className="font-semibold">Order Cart ({cart.length})</h3>
             </div>
 
-            {/* Order Type */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Order Type
-              </label>
-              <select
-                value={orderType}
-                onChange={(e) => setOrderType(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              >
-                <option value="DINE_IN">Dine In</option>
-                <option value="TAKEAWAY">Takeaway</option>
-                <option value="DELIVERY">Delivery</option>
-              </select>
-            </div>
-
-            {/* Table Selection for Dine In */}
-            {orderType === 'DINE_IN' && (
+            {branches.length > 1 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Table *
-                </label>
+                <label className="block text-sm font-medium mb-2">Branch *</label>
                 <select
-                  value={selectedTable}
-                  onChange={(e) => setSelectedTable(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  value={selectedBranch}
+                  onChange={(e) => setSelectedBranch(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
                 >
-                  <option value="">Select Table</option>
-                  {tables.filter(t => t.table_status === 'AVAILABLE').map(table => (
-                    <option key={table.id} value={table.id}>
-                      Table {table.table_number} {table.floor && `(${table.floor})`}
+                  {branches.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
                     </option>
                   ))}
                 </select>
               </div>
             )}
 
-            {/* Cart Items */}
+            <div>
+              <label className="block text-sm font-medium mb-2">Order Type</label>
+              <select
+                value={orderType}
+                onChange={(e) => setOrderType(e.target.value as typeof orderType)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+              >
+                <option value="dine_in">Dine In</option>
+                <option value="takeaway">Takeaway</option>
+                <option value="delivery">Delivery</option>
+              </select>
+            </div>
+
+            {orderType === 'dine_in' && (
+              <div>
+                <label className="block text-sm font-medium mb-2">Table *</label>
+                <select
+                  value={selectedTable}
+                  onChange={(e) => setSelectedTable(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+                >
+                  <option value="">Select Table</option>
+                  {tables
+                    .filter((t) => t.table_status === 'available' || t.table_status === 'occupied')
+                    .map((table) => (
+                      <option key={table.id} value={table.id}>
+                        Table {table.table_number}
+                        {table.dining_area ? ` (${table.dining_area})` : ''} — {table.table_status}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-sm font-medium mb-2">Kitchen (for KOT)</label>
+              <select
+                value={selectedKitchen}
+                onChange={(e) => setSelectedKitchen(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800"
+              >
+                <option value="">No KOT</option>
+                {kitchens
+                  .filter((k) => !selectedBranch || !k.branch_id || k.branch_id === selectedBranch)
+                  .map((k) => (
+                    <option key={k.id} value={k.id}>
+                      {k.name}
+                    </option>
+                  ))}
+              </select>
+            </div>
+
             <div className="flex-1 overflow-y-auto space-y-2">
               {cart.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-48 text-gray-500 dark:text-gray-400">
+                <div className="flex flex-col items-center justify-center h-48 text-gray-500">
                   <ShoppingCart className="h-12 w-12 mb-2 opacity-50" />
                   <p className="text-sm">Cart is empty</p>
                 </div>
@@ -403,42 +898,32 @@ const OrdersPage: React.FC = () => {
                     className="bg-white dark:bg-gray-800 rounded-lg p-3 space-y-2"
                   >
                     <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100 text-sm">
-                          {item.menu_item.name}
-                        </h4>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
-                          ${item.menu_item.price.toFixed(2)} each
-                        </p>
+                      <div>
+                        <h4 className="font-medium text-sm">{item.menu_item.name}</h4>
+                        <p className="text-xs text-gray-500">{money(item.menu_item.price)} each</p>
                       </div>
-                      <button
-                        onClick={() => removeFromCart(item.menu_item.id)}
-                        className="text-red-500 hover:text-red-600"
-                      >
-                        <X className="h-4 w-4" />
+                      <button onClick={() => updateQuantity(item.menu_item.id, -item.quantity)}>
+                        <X className="h-4 w-4 text-red-500" />
                       </button>
                     </div>
-                    
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => updateQuantity(item.menu_item.id, -1)}
-                          className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center justify-center"
+                          className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center"
                         >
                           <Minus className="h-3 w-3" />
                         </button>
-                        <span className="w-8 text-center font-medium text-gray-900 dark:text-gray-100">
-                          {item.quantity}
-                        </span>
+                        <span className="w-8 text-center font-medium">{item.quantity}</span>
                         <button
                           onClick={() => updateQuantity(item.menu_item.id, 1)}
-                          className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 flex items-center justify-center"
+                          className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center"
                         >
                           <Plus className="h-3 w-3" />
                         </button>
                       </div>
-                      <span className="font-semibold text-gray-900 dark:text-gray-100">
-                        ${(item.menu_item.price * item.quantity).toFixed(2)}
+                      <span className="font-semibold">
+                        {money(Number(item.menu_item.price || 0) * item.quantity)}
                       </span>
                     </div>
                   </div>
@@ -446,45 +931,34 @@ const OrdersPage: React.FC = () => {
               )}
             </div>
 
-            {/* Order Notes */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Order Notes
-              </label>
+              <label className="block text-sm font-medium mb-2">Order Notes</label>
               <textarea
                 rows={2}
                 value={orderNotes}
                 onChange={(e) => setOrderNotes(e.target.value)}
                 placeholder="Special instructions..."
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm"
               />
             </div>
 
-            {/* Total and Actions */}
             <div className="space-y-3 pt-3 border-t border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
-                <span className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                  Total:
-                </span>
+                <span className="text-lg font-semibold">Total:</span>
                 <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                  ${calculateTotal().toFixed(2)}
+                  {money(cartTotal)}
                 </span>
               </div>
-              
               <div className="flex gap-2">
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowOrderModal(false)}
-                  className="flex-1"
-                >
+                <Button variant="ghost" onClick={() => setShowCreateModal(false)} className="flex-1">
                   Cancel
                 </Button>
                 <Button
                   onClick={handleCreateOrder}
-                  disabled={cart.length === 0}
+                  disabled={cart.length === 0 || actionLoading}
                   className="flex-1"
                 >
-                  Create Order
+                  {actionLoading ? 'Creating...' : 'Create Order'}
                 </Button>
               </div>
             </div>

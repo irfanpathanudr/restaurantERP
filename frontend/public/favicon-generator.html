@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Favicon Generator - Restaurant ERP</title>
+</head>
+<body>
+    <h2>Restaurant ERP Favicon Generator</h2>
+    <p>Open this file in a browser, right-click on the canvas, and save as PNG</p>
+    <canvas id="canvas" width="512" height="512"></canvas>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Background gradient
+        const gradient = ctx.createLinearGradient(0, 0, 512, 512);
+        gradient.addColorStop(0, '#EF4444');
+        gradient.addColorStop(1, '#DC2626');
+        
+        // Draw circle background
+        ctx.beginPath();
+        ctx.arc(256, 256, 256, 0, 2 * Math.PI);
+        ctx.fillStyle = gradient;
+        ctx.fill();
+        
+        // Draw chef hat top
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        ctx.arc(200, 160, 40, 0, 2 * Math.PI);
+        ctx.arc(256, 140, 50, 0, 2 * Math.PI);
+        ctx.arc(312, 160, 40, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // Draw chef hat base
+        ctx.fillStyle = 'white';
+        ctx.fillRect(180, 180, 152, 80);
+        ctx.beginPath();
+        ctx.arc(180, 220, 20, Math.PI/2, 3*Math.PI/2);
+        ctx.arc(332, 220, 20, 3*Math.PI/2, Math.PI/2);
+        ctx.fill();
+        ctx.fillRect(180, 200, 152, 40);
+        
+        // Draw fork
+        ctx.fillStyle = 'white';
+        // Fork tines
+        ctx.fillRect(170, 300, 12, 80);
+        ctx.fillRect(190, 300, 12, 80);
+        ctx.fillRect(210, 300, 12, 80);
+        // Fork base
+        ctx.fillRect(170, 380, 52, 50);
+        ctx.beginPath();
+        ctx.arc(196, 380, 26, Math.PI, 0);
+        ctx.arc(196, 430, 26, 0, Math.PI);
+        ctx.fill();
+        
+        // Draw knife
+        ctx.fillStyle = 'white';
+        // Knife handle
+        ctx.fillRect(290, 300, 32, 80);
+        ctx.beginPath();
+        ctx.arc(306, 300, 16, Math.PI, 0);
+        ctx.arc(306, 380, 16, 0, Math.PI);
+        ctx.fill();
+        
+        // Knife blade
+        ctx.fillStyle = '#E5E7EB';
+        ctx.beginPath();
+        ctx.moveTo(306, 380);
+        ctx.lineTo(286, 440);
+        ctx.lineTo(326, 440);
+        ctx.closePath();
+        ctx.fill();
+    </script>
+</body>
+</html>

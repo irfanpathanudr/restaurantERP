@@ -8,8 +8,9 @@ import { Modal } from '@/components/common/Modal';
 import { PermissionGuard } from '@/components/common/PermissionGuard';
 import { userService } from '@/services/user.service';
 import { roleService } from '@/services/role.service';
-import { User, Role } from '@/types/entities.types';
-import { Plus, Edit, Trash2, Lock, Unlock } from 'lucide-react';
+import { branchService } from '@/services/branch.service';
+import { User, Role, Branch } from '@/types/entities.types';
+import { Plus, Edit, Trash2, Lock, Unlock, Building2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
 import { RootState } from '@/store';
@@ -21,6 +22,7 @@ const UsersPage: React.FC = () => {
   
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [branches, setBranches] = useState<Branch[]>([]);
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -39,6 +41,7 @@ const UsersPage: React.FC = () => {
     dispatch(setPageTitle('Users'));
     fetchUsers();
     fetchRoles();
+    fetchBranches();
   }, [dispatch]);
 
   const fetchUsers = async () => {
@@ -59,6 +62,15 @@ const UsersPage: React.FC = () => {
       setRoles(data || []);
     } catch (error) {
       toast.error('Failed to fetch roles');
+    }
+  };
+
+  const fetchBranches = async () => {
+    try {
+      const data = await branchService.findAll();
+      setBranches(data || []);
+    } catch (error) {
+      toast.error('Failed to fetch branches');
     }
   };
 
@@ -182,7 +194,17 @@ const UsersPage: React.FC = () => {
     {
       accessorKey: 'branch',
       header: 'Branch',
-      cell: ({ row }) => row.original.branch?.name || '-',
+      cell: ({ row }) => {
+        const branchName = row.original.branch?.name;
+        return branchName ? (
+          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full">
+            <Building2 className="h-3 w-3" />
+            {branchName}
+          </span>
+        ) : (
+          <span className="text-xs text-gray-400 italic">All Branches</span>
+        );
+      },
     },
     {
       accessorKey: 'is_active',
@@ -371,6 +393,30 @@ const UsersPage: React.FC = () => {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Branch Assignment
+            </label>
+            <select
+              value={formData.branchId}
+              onChange={(e) => setFormData({ ...formData, branchId: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+            >
+              <option value="">All Branches (No Restriction)</option>
+              {branches.map((branch) => (
+                <option key={branch.id} value={branch.id}>
+                  {branch.name}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {formData.branchId 
+                ? 'User will only have access to the selected branch' 
+                : 'User will have access to all branches in the system'}
+            </p>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">

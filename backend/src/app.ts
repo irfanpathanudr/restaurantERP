@@ -55,6 +55,7 @@ class App {
     const reportRoutes = require('./routes/report.routes').default;
     const dashboardRoutes = require('./routes/dashboard.routes').default;
     const settingRoutes = require('./routes/setting.routes').default;
+    const printerRoutes = require('./routes/printer.routes').default;
 
     // API routes
     this.app.use('/api/v1/auth', authRoutes);
@@ -83,6 +84,7 @@ class App {
     this.app.use('/api/v1/reports', reportRoutes);
     this.app.use('/api/v1/dashboard', dashboardRoutes);
     this.app.use('/api/v1/settings', settingRoutes);
+    this.app.use('/api/v1/printers', printerRoutes);
     
     // API documentation (Swagger) will be added here
     
@@ -91,11 +93,16 @@ class App {
   }
 
   private initializeMiddlewares() {
-    // Security middleware
-    this.app.use(helmet());
+    // Security middleware — allow cross-origin images/uploads from frontend & KOT
+    this.app.use(
+      helmet({
+        crossOriginResourcePolicy: { policy: 'cross-origin' },
+        crossOriginEmbedderPolicy: false,
+      })
+    );
     
     // CORS — allow localhost + LAN IPs (needed for mobile on same Wi‑Fi)
-    const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000,http://localhost:3001')
+    const corsOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000,http://localhost:3001,http://localhost:5173')
       .split(',')
       .map((o) => o.trim())
       .filter(Boolean);
@@ -109,6 +116,7 @@ class App {
     this.app.use(
       cors({
         origin: (origin, callback) => {
+          // Same-origin / tools (Postman, curl) have no Origin header
           if (!origin) {
             callback(null, true);
             return;
@@ -117,7 +125,7 @@ class App {
             callback(null, true);
             return;
           }
-          // In development, allow phone/tablet on the same Wi‑Fi
+          // Dev: allow any private LAN origin (phone/tablet on same Wi‑Fi)
           if (isDev && isPrivateLan(origin)) {
             callback(null, true);
             return;
@@ -125,6 +133,15 @@ class App {
           callback(null, false);
         },
         credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+        allowedHeaders: [
+          'Content-Type',
+          'Authorization',
+          'X-Requested-With',
+          'Accept',
+          'Origin',
+        ],
+        exposedHeaders: ['Content-Disposition'],
         optionsSuccessStatus: 200,
       })
     );
@@ -168,8 +185,12 @@ class App {
       );
     }
 
-    // Static files
-    this.app.use('/uploads', express.static('uploads'));
+    // Static files with CORS headers
+    this.app.use('/uploads', (req, res, next) => {
+      res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      next();
+    }, express.static('uploads'));
   }
 
   private initializeErrorHandling() {

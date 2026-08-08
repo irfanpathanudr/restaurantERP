@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { API_CONFIG } from '@/config/api';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -8,6 +9,14 @@ export function cn(...inputs: ClassValue[]) {
 export function formatMoney(amount: number | string | undefined | null) {
   const n = Number(amount) || 0;
   return `₹${n.toFixed(2)}`;
+}
+
+/** Turn API image paths (/uploads/...) into absolute backend URLs */
+export function resolveMediaUrl(path?: string | null): string | null {
+  if (!path) return null;
+  if (/^https?:\/\//i.test(path)) return path;
+  const base = API_CONFIG.SERVER_URL.replace(/\/$/, '');
+  return path.startsWith('/') ? `${base}${path}` : `${base}/${path}`;
 }
 
 export function printKotTicket(payload: {

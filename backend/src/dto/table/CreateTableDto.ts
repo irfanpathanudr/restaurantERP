@@ -5,6 +5,7 @@ export enum TableStatus {
   OCCUPIED = 'occupied',
   RESERVED = 'reserved',
   MAINTENANCE = 'maintenance',
+  CLEANING = 'cleaning',
 }
 
 export class CreateTableDto {
@@ -19,6 +20,18 @@ export class CreateTableDto {
   @IsNotEmpty()
   @IsUUID()
   branchId: string;
+
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @IsOptional()
+  @IsString()
+  tableType?: string;
+
+  @IsOptional()
+  @IsString()
+  shape?: string;
 
   @IsOptional()
   @IsString()

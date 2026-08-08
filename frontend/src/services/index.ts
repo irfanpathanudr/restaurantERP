@@ -11,6 +11,9 @@ export { settingService } from './setting.service';
 export { userService } from './user.service';
 export { roleService } from './role.service';
 export { permissionService } from './permission.service';
+export { orderService } from './order.service';
+export { kotService } from './kot.service';
+export { reservationService } from './reservation.service';
 
 // Re-export for convenience
 export * from './auth.service';

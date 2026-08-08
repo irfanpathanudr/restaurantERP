@@ -22,6 +22,7 @@ import OrdersPage from './pages/orders/OrdersPage';
 import KOTPage from './pages/kot/KOTPage';
 import TablesPage from './pages/tables/TablesPage';
 import MenuPage from './pages/menu/MenuPage';
+import CategoryPage from './pages/menu/CategoryPage';
 import CustomersPage from './pages/customers/CustomersPage';
 import InventoryPage from './pages/inventory/InventoryPage';
 import EmployeesPage from './pages/employees/EmployeesPage';
@@ -39,6 +40,7 @@ import AuditLogsPage from './pages/audit-logs/AuditLogsPage';
 import UsersPage from './pages/users/UsersPage';
 import RolesPage from './pages/roles/RolesPage';
 import PermissionsPage from './pages/permissions/PermissionsPage';
+import { PrintersPage } from './pages/printers/PrintersPage';
 
 // Placeholder component for pages under development
 const ComingSoon = ({ pageName }: { pageName: string }): JSX.Element => {
@@ -152,6 +154,7 @@ function App() {
         <Route path="/kot" element={<KOTPage />} />
         <Route path="/tables" element={<TablesPage />} />
         <Route path="/menu" element={<MenuPage />} />
+        <Route path="/categories" element={<CategoryPage />} />
         <Route path="/recipes" element={<RecipesPage />} />
         <Route path="/customers" element={<CustomersPage />} />
         <Route path="/reservations" element={<ReservationsPage />} />
@@ -169,6 +172,7 @@ function App() {
         <Route path="/users" element={<UsersPage />} />
         <Route path="/roles" element={<RolesPage />} />
         <Route path="/permissions" element={<PermissionsPage />} />
+        <Route path="/printers" element={<PrintersPage />} />
         <Route path="/settings" element={<SettingsPage />} />
       </Route>
 

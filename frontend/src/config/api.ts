@@ -1,5 +1,6 @@
 export const API_CONFIG = {
-  BASE_URL: import.meta.env?.VITE_API_URL || 'http://localhost:5000/api/v1',
+  BASE_URL: (import.meta.env?.VITE_API_URL || 'http://localhost:5000') + (import.meta.env?.VITE_API_BASE_PATH || '/api/v1'),
+  SERVER_URL: import.meta.env?.VITE_API_URL || 'http://localhost:5000',
   TIMEOUT: 30000,
   HEADERS: {
     'Content-Type': 'application/json',
@@ -127,22 +128,26 @@ export const API_ENDPOINTS = {
     LIST: '/orders',
     CREATE: '/orders',
     UPDATE: (id: string) => `/orders/${id}`,
-    DELETE: (id: string) => `/orders/${id}`,
     GET: (id: string) => `/orders/${id}`,
-    BY_TABLE: (tableId: string) => `/orders/table/${tableId}`,
-    ACTIVE: '/orders/active',
+    BY_TABLE: (tableId: string) => `/orders/table/${tableId}/active`,
     UPDATE_STATUS: (id: string) => `/orders/${id}/status`,
+    ADD_ITEMS: (id: string) => `/orders/${id}/items`,
+    UPDATE_ITEM: (id: string, itemId: string) => `/orders/${id}/items/${itemId}`,
+    REMOVE_ITEM: (id: string, itemId: string) => `/orders/${id}/items/${itemId}`,
+    COMPLETE: (id: string) => `/orders/${id}/complete`,
+    CANCEL: (id: string) => `/orders/${id}/cancel`,
+    DISCOUNT: (id: string) => `/orders/${id}/discount`,
+    CONFIRM: (id: string) => `/orders/${id}/confirm`,
   },
 
   // KOT (Kitchen Order Tickets)
   KOT: {
     LIST: '/kot',
     CREATE: '/kot',
-    UPDATE: (id: string) => `/kot/${id}`,
     GET: (id: string) => `/kot/${id}`,
-    BY_KITCHEN: (kitchenId: string) => `/kot/kitchen/${kitchenId}`,
-    BY_STATUS: (status: string) => `/kot/status/${status}`,
     UPDATE_STATUS: (id: string) => `/kot/${id}/status`,
+    COMPLETE: (id: string) => `/kot/${id}/complete`,
+    PRINT: (id: string) => `/kot/${id}/print`,
   },
 
   // Payments

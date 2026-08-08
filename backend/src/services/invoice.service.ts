@@ -31,33 +31,37 @@ export class InvoiceService {
         invoice_number: invoiceNumber,
         invoice_type: InvoiceType.INVOICE,
         order_id: data.orderId,
-        customer_id: data.customerId || order.customer_id,
+        customer_id: data.customerId || order.customer_id || null,
         branch_id: order.branch_id,
         invoice_date: new Date(),
-        subtotal: Number(order.subtotal),
+        subtotal: Number(order.subtotal) || 0,
         discount_amount: Number(order.discount_amount) || 0,
-        cgst_amount: taxHalf,
-        cgst_percentage: Number(order.tax_percentage) / 2 || 2.5,
-        sgst_amount: taxHalf,
-        sgst_percentage: Number(order.tax_percentage) / 2 || 2.5,
+        cgst_amount: taxHalf || 0,
+        cgst_percentage: (Number(order.tax_percentage) || 18) / 2,
+        sgst_amount: taxHalf || 0,
+        sgst_percentage: (Number(order.tax_percentage) || 18) / 2,
         igst_amount: 0,
         igst_percentage: 0,
         service_charge: Number(order.service_charge) || 0,
         rounding_amount: Number(order.rounding_amount) || 0,
-        grand_total: Number(order.grand_total),
+        grand_total: Number(order.grand_total) || 0,
         notes: data.notes || null,
         print_count: 0,
+        is_duplicate: false,
       });
 
       await this.invoiceRepository.save(invoice);
 
-      order.order_status = OrderStatus.COMPLETED;
-      order.payment_status = PaymentStatus.PAID;
-      order.paid_amount = Number(order.grand_total);
-      order.due_amount = 0;
-      order.completed_at = new Date();
-      await this.orderRepository.save(order);
+      // Update order status
+      await this.orderRepository.update(order.id, {
+        order_status: OrderStatus.COMPLETED,
+        payment_status: PaymentStatus.PAID,
+        paid_amount: Number(order.grand_total),
+        due_amount: 0,
+        completed_at: new Date(),
+      });
 
+      // Update table status
       if (order.table_id) {
         await AppDataSource.getRepository(Table).update(order.table_id, {
           table_status: TableStatus.AVAILABLE,

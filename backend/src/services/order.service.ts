@@ -11,7 +11,7 @@ import { KOTService } from './kot.service';
 import logger from '../config/logger';
 import { In, Not, Repository } from 'typeorm';
 
-const TAX_RATE = 0.05;
+const TAX_RATE = 0.18; // 18% GST
 
 const ORDER_TYPE_MAP: Record<string, OrderType> = {
   dine_in: OrderType.DINE_IN,
@@ -284,25 +284,93 @@ export class OrderService {
 
   async update(id: string, data: UpdateOrderDto): Promise<Order> {
     try {
-      const order = await this.orderRepository.findOne({ where: { id } });
-      if (!order) throw new Error('Order not found');
+      // Fetch order WITHOUT relations to avoid cascade issues
+      const order = await this.orderRepository.findOne({ 
+        where: { id }
+      });
+      
+      if (!order) {
+        throw new Error('Order not found');
+      }
 
       if (order.is_locked) {
         throw new Error('Cannot update a locked order. Order has been confirmed by cashier.');
       }
 
+      let recalculate = false;
+
+      // Update discount
+      if (data.discountType !== undefined) {
+        order.discount_type = data.discountType === 'percentage' ? DiscountType.PERCENTAGE : DiscountType.FIXED;
+        recalculate = true;
+      }
+      
+      if (data.discountValue !== undefined) {
+        const discountVal = Number(data.discountValue) || 0;
+        const subtotal = Number(order.subtotal) || 0;
+        
+        if (data.discountType === 'percentage') {
+          order.discount_percentage = discountVal;
+          order.discount_amount = Number(((subtotal * discountVal) / 100).toFixed(2));
+        } else {
+          order.discount_amount = Number(discountVal.toFixed(2));
+          order.discount_percentage = 0;
+        }
+        recalculate = true;
+      }
+      
+      if (data.discountReason !== undefined) {
+        order.discount_reason = data.discountReason || null;
+      }
+
+      // Update tax
+      if (data.taxPercentage !== undefined) {
+        order.tax_percentage = Number(data.taxPercentage) || 0;
+        recalculate = true;
+      }
+
+      // Update service charge
+      if (data.serviceCharge !== undefined) {
+        order.service_charge = Number(data.serviceCharge) || 0;
+        recalculate = true;
+      }
+
+      // Recalculate totals if needed
+      if (recalculate) {
+        const subtotal = Number(order.subtotal) || 0;
+        const discountAmount = Number(order.discount_amount) || 0;
+        const afterDiscount = subtotal - discountAmount;
+        const taxPercentage = Number(order.tax_percentage) || 0;
+        const taxAmount = (afterDiscount * taxPercentage) / 100;
+        const serviceCharge = Number(order.service_charge) || 0;
+        
+        order.tax_amount = Number(taxAmount.toFixed(2));
+        order.grand_total = Number((afterDiscount + taxAmount + serviceCharge).toFixed(2));
+        order.due_amount = Number((order.grand_total - (Number(order.paid_amount) || 0)).toFixed(2));
+      }
+
+      // Update status
       if (data.status) {
         order.order_status = data.status as unknown as OrderStatus;
       }
+      
+      // Update notes
       if (data.notes !== undefined) {
-        order.special_instructions = data.notes;
+        order.special_instructions = data.notes || null;
       }
 
+      // Save only the order entity without cascading to relations
       await this.orderRepository.save(order);
-      logger.info(`Order updated: ${id}`);
+      logger.info(`Order updated successfully: ${id}`);
+      
+      // Return full order with relations
       return (await this.findById(id)) as Order;
-    } catch (error) {
-      logger.error(`Error updating order ${id}:`, error);
+    } catch (error: any) {
+      logger.error(`Error updating order ${id}:`, {
+        error: error.message,
+        stack: error.stack,
+        data
+      });
       throw error;
     }
   }

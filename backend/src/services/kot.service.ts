@@ -89,6 +89,31 @@ export class KOTService {
     }
   }
 
+  private sanitizeKOTData(kot: KOT): KOT {
+    if (kot.order) {
+      // Remove payment-sensitive fields from order
+      delete (kot.order as any).payment_status;
+      delete (kot.order as any).subtotal;
+      delete (kot.order as any).discount_amount;
+      delete (kot.order as any).discount_percentage;
+      delete (kot.order as any).discount_type;
+      delete (kot.order as any).discount_reason;
+      delete (kot.order as any).coupon_code;
+      delete (kot.order as any).tax_amount;
+      delete (kot.order as any).tax_percentage;
+      delete (kot.order as any).service_charge;
+      delete (kot.order as any).delivery_charge;
+      delete (kot.order as any).tips;
+      delete (kot.order as any).rounding_amount;
+      delete (kot.order as any).grand_total;
+      delete (kot.order as any).paid_amount;
+      delete (kot.order as any).due_amount;
+      delete (kot.order as any).cashier_id;
+      delete (kot.order as any).cashier_confirmed_at;
+    }
+    return kot;
+  }
+
   async findAll(filters?: {
     orderId?: string;
     kitchenId?: string;
@@ -129,7 +154,8 @@ export class KOTService {
         });
       }
 
-      return await query.getMany();
+      const kots = await query.getMany();
+      return kots.map(kot => this.sanitizeKOTData(kot));
     } catch (error) {
       logger.error('Error fetching KOTs:', error);
       throw error;
@@ -138,10 +164,11 @@ export class KOTService {
 
   async findById(id: string): Promise<KOT | null> {
     try {
-      return await this.kotRepository.findOne({
+      const kot = await this.kotRepository.findOne({
         where: { id },
         relations: ['order', 'order.table', 'kitchen'],
       });
+      return kot ? this.sanitizeKOTData(kot) : null;
     } catch (error) {
       logger.error(`Error fetching KOT ${id}:`, error);
       throw error;

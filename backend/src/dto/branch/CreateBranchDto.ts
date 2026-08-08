@@ -1,4 +1,5 @@
-import { IsNotEmpty, IsString, IsEmail, IsOptional, IsUUID, IsJSON } from 'class-validator';
+import { IsNotEmpty, IsString, IsEmail, IsOptional, IsUUID, IsNumber } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateBranchDto {
   @IsNotEmpty()
@@ -11,7 +12,11 @@ export class CreateBranchDto {
 
   @IsNotEmpty()
   @IsUUID()
-  restaurantId: string;
+  restaurant_id: string;
+
+  @IsOptional()
+  @IsString()
+  description?: string;
 
   @IsNotEmpty()
   @IsString()
@@ -37,19 +42,21 @@ export class CreateBranchDto {
   @IsString()
   phone: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsEmail()
-  email: string;
+  email?: string;
 
   @IsOptional()
   @IsString()
-  managerName?: string;
+  gst_number?: string;
 
   @IsOptional()
-  @IsString()
-  managerPhone?: string;
+  @Type(() => Number)
+  @IsNumber()
+  latitude?: number;
 
   @IsOptional()
-  @IsJSON()
-  settings?: string;
+  @Type(() => Number)
+  @IsNumber()
+  longitude?: number;
 }

@@ -115,15 +115,16 @@ const TablesPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      // Backend CreateTableDto / UpdateTableDto expect camelCase
       const submitData = {
+        tableNumber: formData.table_number,
         name: formData.name,
-        table_number: formData.table_number,
-        branch_id: formData.branch_id,
-        table_type: formData.table_type,
-        capacity: parseInt(formData.capacity),
-        table_status: formData.table_status,
+        branchId: formData.branch_id,
+        tableType: formData.table_type,
+        capacity: parseInt(formData.capacity, 10),
+        status: formData.table_status,
         shape: formData.shape,
-        dining_area: formData.dining_area || undefined,
+        location: formData.dining_area || undefined,
       };
 
       if (selectedTable) {
