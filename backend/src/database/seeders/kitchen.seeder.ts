@@ -2,54 +2,58 @@ import { DataSource } from 'typeorm';
 import { Kitchen } from '../entities/Kitchen.entity';
 import { Branch } from '../entities/Branch.entity';
 
+/**
+ * Seeds exactly ONE kitchen per branch.
+ * Kitchen code is derived from the branch code, e.g. "BR001-MAIN".
+ */
 export async function seedKitchens(dataSource: DataSource): Promise<void> {
   const kitchenRepo = dataSource.getRepository(Kitchen);
   const branchRepo = dataSource.getRepository(Branch);
 
   const branches = await branchRepo.find({ order: { code: 'ASC' } });
   if (branches.length === 0) {
-    console.log('⚠️ Branches not found. Please seed branches first.');
+    console.log('⚠️  Branches not found. Please seed branches first.');
     return;
   }
-
-  const templates = [
-    { name: 'Main Kitchen', codeSuffix: 'MAIN', location: 'Back of house' },
-    { name: 'Tandoor / Grill', codeSuffix: 'GRILL', location: 'Hot line' },
-    { name: 'Beverage Station', codeSuffix: 'BEV', location: 'Bar' },
-  ];
 
   let seeded = 0;
 
   for (const branch of branches) {
-    for (const tmpl of templates) {
-      const code = `${branch.code}-${tmpl.codeSuffix}`;
-      const exists = await kitchenRepo.findOne({ where: { code }, withDeleted: true });
-      if (exists) {
-        // Restore soft-deleted record and update
-        exists.deleted_at = null;
-        exists.deleted_by = null;
-        exists.name = `${tmpl.name} (${branch.name})`;
-        exists.branch_id = branch.id;
-        exists.is_active = true;
-        await kitchenRepo.save(exists);
-        continue;
-      }
+    const code = `${branch.code}-MAIN`;
 
+    const existing = await kitchenRepo.findOne({ where: { code }, withDeleted: true });
+
+    if (existing) {
+      // Restore soft-deleted record and sync fields
+      existing.deleted_at = null;
+      existing.deleted_by = null;
+      existing.name = `Main Kitchen`;
+      existing.branch_id = branch.id;
+      existing.location = 'Back of house';
+      existing.description = `Main kitchen for ${branch.name}`;
+      existing.is_active = true;
+      existing.status = 'active';
+      existing.sort_order = 0;
+      await kitchenRepo.save(existing);
+      console.log(`🔄 Kitchen updated/restored: ${existing.name} (${branch.name})`);
+    } else {
       const kitchen = kitchenRepo.create({
-        name: `${tmpl.name} (${branch.name})`,
+        name: 'Main Kitchen',
         code,
         branch_id: branch.id,
-        location: tmpl.location,
-        description: `${tmpl.name} for ${branch.name}`,
+        location: 'Back of house',
+        description: `Main kitchen for ${branch.name}`,
         is_active: true,
         status: 'active',
-        sort_order: seeded,
+        sort_order: 0,
       });
       await kitchenRepo.save(kitchen);
       seeded += 1;
-      console.log(`✅ Kitchen seeded: ${kitchen.name}`);
+      console.log(`✅ Kitchen seeded: ${kitchen.name} (${branch.name})`);
     }
   }
 
-  console.log(`✅ Kitchens seed done — ${seeded} new kitchen(s)`);
+  if (seeded > 0) {
+    console.log(`✅ Kitchens seed done — ${seeded} new kitchen(s)`);
+  }
 }

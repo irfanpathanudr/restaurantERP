@@ -5,14 +5,16 @@ import { cn } from '@/utils/cn';
 export interface ModalProps {
   open: boolean;
   onClose: () => void;
-  title?: string;
+  title?: React.ReactNode;
   description?: string;
   size?: 'sm' | 'md' | 'lg' | 'xl' | 'full';
   children: React.ReactNode;
   footer?: React.ReactNode;
   closeOnBackdrop?: boolean;
   showCloseButton?: boolean;
+  scrollBody?: boolean;
   className?: string;
+  contentClassName?: string;
 }
 
 export const Modal: React.FC<ModalProps> = ({
@@ -25,7 +27,9 @@ export const Modal: React.FC<ModalProps> = ({
   footer,
   closeOnBackdrop = true,
   showCloseButton = true,
+  scrollBody = true,
   className,
+  contentClassName,
 }) => {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -74,11 +78,11 @@ export const Modal: React.FC<ModalProps> = ({
         {/* Header */}
         {(title || showCloseButton) && (
           <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-800">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               {title && (
-                <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                <div className="text-xl font-semibold text-gray-900 dark:text-gray-100">
                   {title}
-                </h2>
+                </div>
               )}
               {description && (
                 <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
@@ -99,7 +103,13 @@ export const Modal: React.FC<ModalProps> = ({
         )}
 
         {/* Content */}
-        <div className="p-6 max-h-[calc(100vh-16rem)] overflow-y-auto">
+        <div
+          className={cn(
+            'p-6',
+            scrollBody && 'max-h-[calc(100vh-16rem)] overflow-y-auto',
+            contentClassName
+          )}
+        >
           {children}
         </div>
 

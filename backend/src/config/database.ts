@@ -8,7 +8,7 @@ export const dataSourceOptions: DataSourceOptions = {
   type: 'mysql',
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '3306'),
-  username: process.env.DB_USER || 'root',
+  username: process.env.DB_USERNAME || process.env.DB_USER || 'root',
   password: process.env.DB_PASSWORD || undefined, // undefined for empty password
   database: process.env.DB_NAME || 'restaurant_erp',
   synchronize: false, // IMPORTANT: Set to false to use migrations

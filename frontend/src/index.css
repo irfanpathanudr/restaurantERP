@@ -27,6 +27,27 @@
     display: none;
   }
 
+  .scrollbar-visible {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(156 163 175) transparent;
+  }
+
+  .scrollbar-visible::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  .scrollbar-visible::-webkit-scrollbar-track {
+    @apply bg-gray-100 dark:bg-gray-800 rounded;
+  }
+
+  .scrollbar-visible::-webkit-scrollbar-thumb {
+    @apply bg-gray-400 dark:bg-gray-500 rounded;
+  }
+
+  .scrollbar-visible::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-500 dark:bg-gray-400;
+  }
+
   .card {
     @apply bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700;
   }

@@ -150,11 +150,12 @@ export class OrderService {
 
       await queryRunner.commitTransaction();
 
-      if (data.createKot !== false && data.kitchenId) {
+      // Auto-create KOT for dine-in orders (kitchen will auto-select if not specified)
+      if (data.createKot !== false) {
         try {
           await this.kotService.create({
             orderId: order.id,
-            kitchenId: data.kitchenId,
+            kitchenId: data.kitchenId, // Can be undefined - KOTService will auto-select
             items: data.items.map((i) => ({
               menuItemId: i.menuItemId,
               quantity: i.quantity,
@@ -163,8 +164,10 @@ export class OrderService {
             notes: data.notes,
             waiterId: data.waiterId,
           });
+          logger.info(`KOT auto-created for order: ${order.id}`);
         } catch (kotError) {
-          logger.warn('Order created but KOT creation failed:', kotError);
+          logger.error('Order created but KOT creation failed:', kotError);
+          // Don't throw - order is already created
         }
       }
 
@@ -424,19 +427,26 @@ export class OrderService {
 
       await queryRunner.commitTransaction();
 
+      // Auto-create KOT when adding items (kitchen will auto-select if not specified)
       let kot;
-      if (data.createKot !== false && data.kitchenId) {
-        kot = await this.kotService.create({
-          orderId: id,
-          kitchenId: data.kitchenId,
-          items: data.items.map((i) => ({
-            menuItemId: i.menuItemId,
-            quantity: i.quantity,
-            specialInstructions: i.specialInstructions,
-          })),
-          notes: data.notes,
-          waiterId: data.waiterId,
-        });
+      if (data.createKot !== false) {
+        try {
+          kot = await this.kotService.create({
+            orderId: id,
+            kitchenId: data.kitchenId, // Can be undefined - KOTService will auto-select
+            items: data.items.map((i) => ({
+              menuItemId: i.menuItemId,
+              quantity: i.quantity,
+              specialInstructions: i.specialInstructions,
+            })),
+            notes: data.notes,
+            waiterId: data.waiterId,
+          });
+          logger.info(`KOT created for additional items on order: ${id}`);
+        } catch (kotError) {
+          logger.error('Items added but KOT creation failed:', kotError);
+          // Don't throw - items are already added
+        }
       }
 
       logger.info(`Items added to order: ${id}`);

@@ -41,10 +41,12 @@ if errorlevel 1 (
   exit /b 1
 )
 
-REM ---- Preserve existing DB password if present ----
+REM ---- Preserve existing DB settings if present ----
 set "DB_PASSWORD="
+set "DB_NAME=restaurant_erp"
 if exist "backend\.env" (
   for /f "usebackq tokens=1,* delims==" %%A in (`findstr /B /C:"DB_PASSWORD=" "backend\.env"`) do set "DB_PASSWORD=%%B"
+  for /f "usebackq tokens=1,* delims==" %%A in (`findstr /B /C:"DB_NAME=" "backend\.env"`) do set "DB_NAME=%%B"
 )
 
 REM ---- Detect LAN IP via ipconfig (prefer 192.168.x / 10.x) ----
@@ -80,7 +82,7 @@ echo DB_HOST=localhost
 echo DB_PORT=3306
 echo DB_USERNAME=root
 echo DB_PASSWORD=%DB_PASSWORD%
-echo DB_NAME=restaurant_erp
+echo DB_NAME=%DB_NAME%
 echo.
 echo PORT=5000
 echo NODE_ENV=development

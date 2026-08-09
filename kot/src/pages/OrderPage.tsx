@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
+  AlertCircle,
   ArrowLeft,
   CheckCircle2,
   ChefHat,
@@ -94,12 +95,12 @@ function OrderTimer({ startTime }: { startTime?: string | null }) {
 // ─── KOT status display ───────────────────────────────────────────────────────
 const KOT_STATUS_CONFIG: Record<
   string,
-  { label: string; color: string; dot: string; icon?: React.ReactNode }
+  { label: string; color: string; dot: string }
 > = {
   pending: {
     label: 'Waiting',
     color: 'border-amber-500/40 bg-amber-500/10 text-amber-300',
-    dot: 'bg-amber-400',
+    dot: 'bg-amber-400 animate-pulse',
   },
   in_progress: {
     label: 'Preparing',
@@ -107,9 +108,9 @@ const KOT_STATUS_CONFIG: Record<
     dot: 'bg-sky-400 animate-pulse',
   },
   ready: {
-    label: '🍽 Ready!',
+    label: 'READY!',
     color: 'border-emerald-500/50 bg-emerald-500/15 text-emerald-300',
-    dot: 'bg-emerald-400',
+    dot: 'bg-emerald-400 animate-pulse',
   },
   served: {
     label: 'Served',
@@ -123,36 +124,49 @@ const KOT_STATUS_CONFIG: Record<
   },
 };
 
-function KotStatusSection({
-  orderId,
-  refreshTrigger,
-}: {
-  orderId: string;
-  refreshTrigger: number;
-}) {
+// ─── useKotStatus hook — shared between KotStatusSection and OrderPage ────────
+function useKotStatus(orderId: string | undefined, refreshTrigger: number) {
   const [kots, setKots] = useState<Kot[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
   const load = useCallback(async () => {
+    if (!orderId) return;
+    setError(false);
     try {
       const list = await getKots({ orderId });
-      // Show most recent first, exclude served/cancelled unless all are done
+      // Always show active KOTs first; fall back to last 3 when all are done
       const active = list.filter((k) => !['served', 'cancelled'].includes(k.kot_status));
       setKots(active.length > 0 ? active : list.slice(0, 3));
     } catch {
-      /* silent */
+      setError(true);
     } finally {
       setLoading(false);
     }
   }, [orderId]);
 
-  // Poll every 8 seconds so waiter sees live kitchen updates
+  // Poll every 5 seconds for live kitchen updates
   useEffect(() => {
+    setLoading(true);
     load();
-    const id = setInterval(load, 8000);
+    const id = setInterval(load, 5000);
     return () => clearInterval(id);
   }, [load, refreshTrigger]);
 
+  return { kots, loading, error, reload: load };
+}
+
+function KotStatusSection({
+  kots,
+  loading,
+  error,
+  onReload,
+}: {
+  kots: Kot[];
+  loading: boolean;
+  error: boolean;
+  onReload: () => void;
+}) {
   if (loading && kots.length === 0) {
     return (
       <div className="flex items-center gap-2 text-xs text-white/30 py-4 justify-center">
@@ -162,7 +176,33 @@ function KotStatusSection({
     );
   }
 
-  if (kots.length === 0) return null;
+  if (error && kots.length === 0) {
+    return (
+      <div className="mb-4 rounded-xl border border-red-500/20 bg-red-500/5 px-3 py-2.5 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-xs text-red-400">
+          <AlertCircle size={13} />
+          Could not load kitchen status
+        </div>
+        <button
+          type="button"
+          onClick={onReload}
+          className="text-[10px] text-red-400/70 hover:text-red-400 flex items-center gap-1"
+        >
+          <RefreshCw size={11} />
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (kots.length === 0) {
+    return (
+      <div className="mb-4 rounded-xl border border-white/8 bg-surface-card px-3 py-3 flex items-center gap-2 text-xs text-white/30">
+        <ChefHat size={13} />
+        No kitchen tickets yet for this order
+      </div>
+    );
+  }
 
   return (
     <div className="mb-4">
@@ -173,7 +213,7 @@ function KotStatusSection({
         </div>
         <button
           type="button"
-          onClick={load}
+          onClick={onReload}
           className="text-[10px] text-white/30 hover:text-white/60 flex items-center gap-1"
         >
           <RefreshCw size={11} />
@@ -202,9 +242,9 @@ function KotStatusSection({
                   <span className="text-xs font-bold">{kot.kot_number}</span>
                   <span
                     className={cn(
-                      'text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded-md',
+                      'text-[11px] font-bold uppercase tracking-wide px-2 py-1 rounded-md whitespace-nowrap',
                       isReady
-                        ? 'bg-emerald-500/25 text-emerald-300'
+                        ? 'bg-emerald-500/25 text-emerald-300 ring-1 ring-emerald-500/30'
                         : 'bg-black/20 text-current'
                     )}
                   >
@@ -275,6 +315,44 @@ export function OrderPage() {
   const [showCheckout, setShowCheckout] = useState(false);
   // Incrementing this triggers KotStatusSection to re-fetch immediately
   const [kotRefreshTrigger, setKotRefreshTrigger] = useState(0);
+
+  // ── KOT state lifted up so the tab badge + item status can both read it ──
+  const { kots, loading: kotsLoading, error: kotsError, reload: reloadKots } = useKotStatus(
+    order?.id,
+    kotRefreshTrigger
+  );
+
+  // Track previous ready KOT ids to fire a toast only when status changes to ready
+  const prevReadyIds = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const nowReady = kots.filter((k) => k.kot_status === 'ready');
+    const newlyReady = nowReady.filter((k) => !prevReadyIds.current.has(k.id));
+    if (newlyReady.length > 0) {
+      newlyReady.forEach((k) => {
+        toast.success(`🍽 ${k.kot_number} is ready to serve!`, { duration: 5000 });
+      });
+    }
+    prevReadyIds.current = new Set(nowReady.map((k) => k.id));
+  }, [kots]);
+
+  // Build a map: menu_item_id → KOT status, for per-item status badges
+  const itemStatusMap = useMemo(() => {
+    const map = new Map<string, string>();
+    // Iterate newest-first; first match wins (most recent KOT for that item)
+    for (const kot of [...kots].reverse()) {
+      for (const ki of kot.items || []) {
+        const mid = ki.menu_item_id || ki.menuItemId;
+        if (mid && !map.has(mid)) {
+          map.set(mid, kot.kot_status);
+        }
+      }
+    }
+    return map;
+  }, [kots]);
+
+  // Derive alert state for the tab badge
+  const hasReadyKot = kots.some((k) => k.kot_status === 'ready');
+  const hasActiveKot = kots.some((k) => ['pending', 'in_progress', 'ready'].includes(k.kot_status));
 
   const load = useCallback(async () => {
     if (!tableId) return;
@@ -535,13 +613,22 @@ export function OrderPage() {
                   setSearch('');
                 }}
                 className={cn(
-                  'py-2.5 rounded-md text-sm font-semibold capitalize transition-all',
+                  'relative py-2.5 rounded-md text-sm font-semibold capitalize transition-all',
                   tab === t
                     ? 'bg-brand-500 text-white shadow-lg shadow-brand-500/25'
                     : 'text-white/50 hover:text-white/70'
                 )}
               >
                 {t === 'menu' ? `Menu${cart.length ? ` (${cart.length})` : ''}` : 'Current Order'}
+                {/* Status badge on "Current Order" tab when there are active KOTs */}
+                {t === 'order' && hasActiveKot && tab !== 'order' && (
+                  <span
+                    className={cn(
+                      'absolute -top-1 -right-1 h-3 w-3 rounded-full border-2 border-surface-card',
+                      hasReadyKot ? 'bg-emerald-400 animate-pulse' : 'bg-sky-400 animate-pulse'
+                    )}
+                  />
+                )}
               </button>
             ))}
           </div>
@@ -726,8 +813,10 @@ export function OrderPage() {
           {/* ── KOT Kitchen Status ── always show when order exists */}
           {order && (
             <KotStatusSection
-              orderId={order.id}
-              refreshTrigger={kotRefreshTrigger}
+              kots={kots}
+              loading={kotsLoading}
+              error={kotsError}
+              onReload={reloadKots}
             />
           )}
 

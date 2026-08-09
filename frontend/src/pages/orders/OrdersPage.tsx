@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import axios from 'axios';
 import { useDispatch } from 'react-redux';
 import { ColumnDef } from '@tanstack/react-table';
 import { setPageTitle } from '@/store/slices/uiSlice';
@@ -6,8 +7,14 @@ import { DataTable } from '@/components/common/DataTable';
 import { Button } from '@/components/common/Button';
 import { Modal } from '@/components/common/Modal';
 import { orderService, OrderStatusValue } from '@/services/order.service';
+import { paymentService, Payment } from '@/services/payment.service';
 import { apiService } from '@/services/api.service';
 import { useAuth } from '@/hooks/useAuth';
+import PrintableOrderReceipt from '@/components/common/PrintableOrderReceipt';
+import { PrinterSettings } from '@/components/settings/PrinterSettings';
+import { getThermalPrinter, OrderPrintData } from '@/utils/thermalPrinter';
+import { printBillBluetooth, printBillFallback } from '@/utils/escpos';
+import { useReactToPrint } from 'react-to-print';
 import {
   Plus,
   Search,
@@ -19,6 +26,8 @@ import {
   RefreshCw,
   Ban,
   CheckCircle2,
+  Printer,
+  Settings,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
@@ -78,6 +87,7 @@ interface OrderRow {
   tax_amount: number | string;
   discount_amount: number | string;
   grand_total: number | string;
+  paid_amount?: number | string;
   due_amount?: number | string;
   special_instructions?: string | null;
   is_locked?: boolean;
@@ -86,7 +96,21 @@ interface OrderRow {
   table?: { id: string; table_number: string; name?: string } | null;
   customer?: { id: string; name?: string; first_name?: string; last_name?: string } | null;
   order_items?: OrderItemRow[];
-  branch?: { id: string; name: string };
+  branch?: {
+    id: string;
+    name: string;
+    address?: string;
+    phone?: string;
+    gst_number?: string;
+    restaurant?: {
+      id: string;
+      name: string;
+      logo?: string;
+      phone?: string;
+      gst_number?: string;
+    };
+  };
+  payments?: Payment[];
 }
 
 const ORDER_STATUSES: OrderStatusValue[] = [
@@ -130,7 +154,7 @@ const paymentColor = (status: string) => {
 
 const OrdersPage: React.FC = () => {
   const dispatch = useDispatch();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
 
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(false);
@@ -140,6 +164,15 @@ const OrdersPage: React.FC = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [orderPayments, setOrderPayments] = useState<Payment[]>([]);
+  const [printSource, setPrintSource] = useState<{
+    order: OrderRow;
+    payments: Payment[];
+  } | null>(null);
+  const [printLoading, setPrintLoading] = useState<string | null>(null);
+  const [pendingPrint, setPendingPrint] = useState(false);
+  const [showPrinterSettings, setShowPrinterSettings] = useState(false);
+  const printRef = useRef<HTMLDivElement>(null);
 
   // Create order state
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
@@ -154,6 +187,8 @@ const OrdersPage: React.FC = () => {
   const [selectedBranch, setSelectedBranch] = useState('');
   const [orderType, setOrderType] = useState<'dine_in' | 'takeaway' | 'delivery'>('dine_in');
   const [orderNotes, setOrderNotes] = useState('');
+  const [kitchens, setKitchens] = useState<{ id: string; name: string }[]>([]);
+  const [selectedKitchen, setSelectedKitchen] = useState('');
 
   const categories = [
     { id: 'all', name: 'All Items' },
@@ -166,6 +201,8 @@ const OrdersPage: React.FC = () => {
   ];
 
   const fetchOrders = useCallback(async () => {
+    if (!isAuthenticated) return;
+
     try {
       setLoading(true);
       const params: Record<string, any> = {};
@@ -183,18 +220,21 @@ const OrdersPage: React.FC = () => {
       }
       setOrders(data);
     } catch (error: any) {
+      if (axios.isCancel(error) || error?.response?.status === 401) return;
       toast.error(error.response?.data?.message || 'Failed to fetch orders');
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, user?.branch_id]);
+  }, [statusFilter, user?.branch_id, isAuthenticated]);
 
   useEffect(() => {
     dispatch(setPageTitle('Orders'));
+    if (!isAuthenticated) return;
+
     fetchOrders();
     const timer = setInterval(fetchOrders, 15000);
     return () => clearInterval(timer);
-  }, [dispatch, fetchOrders]);
+  }, [dispatch, fetchOrders, isAuthenticated]);
 
   useEffect(() => {
     let filtered = menuItems.filter((item) => item.is_available !== false);
@@ -220,10 +260,11 @@ const OrdersPage: React.FC = () => {
   const fetchCreateData = async () => {
     try {
       setMenuLoading(true);
-      const [menuRes, tablesRes, branchesRes] = await Promise.all([
+      const [menuRes, tablesRes, branchesRes, kitchensRes] = await Promise.all([
         apiService.get('/menu-items', { params: { isAvailable: true } }),
         apiService.get('/tables'),
         apiService.get('/branches'),
+        apiService.get('/kitchens').catch(() => ({ data: { data: [] } })),
       ]);
       setMenuItems(menuRes.data.data || []);
       setTables(tablesRes.data.data || []);
@@ -231,6 +272,19 @@ const OrdersPage: React.FC = () => {
       setBranches(branchList);
       const defaultBranch = user?.branch_id || branchList[0]?.id || '';
       setSelectedBranch(defaultBranch);
+      
+      const kitchenList = kitchensRes.data.data || [];
+      setKitchens(kitchenList);
+      // Auto-select kitchen if only one exists
+      if (kitchenList.length === 1) {
+        setSelectedKitchen(kitchenList[0].id);
+      } else if (kitchenList.length > 1) {
+        // Try to find "Main Kitchen"
+        const mainKitchen = kitchenList.find((k: any) => 
+          k.name.toLowerCase().includes('main')
+        );
+        setSelectedKitchen(mainKitchen?.id || kitchenList[0]?.id || '');
+      }
     } catch {
       toast.error('Failed to load menu / tables');
     } finally {
@@ -241,6 +295,7 @@ const OrdersPage: React.FC = () => {
   const openCreate = async () => {
     setCart([]);
     setSelectedTable('');
+    setSelectedKitchen('');
     setOrderNotes('');
     setOrderType('dine_in');
     setSearchQuery('');
@@ -252,9 +307,20 @@ const OrdersPage: React.FC = () => {
   const openDetail = async (order: OrderRow) => {
     setShowDetailModal(true);
     setDetailLoading(true);
+    setOrderPayments([]);
     try {
+      // Fetch full order details with branch and restaurant info
       const full = await orderService.get(order.id);
       setSelectedOrder(full);
+      
+      // Fetch payments for this order
+      try {
+        const payments = await paymentService.getOrderPayments(order.id);
+        setOrderPayments(payments);
+      } catch (paymentError) {
+        console.error('Failed to fetch payments:', paymentError);
+        // Continue even if payments fail
+      }
     } catch {
       setSelectedOrder(order);
       toast.error('Could not refresh order details');
@@ -314,6 +380,7 @@ const OrdersPage: React.FC = () => {
         tableId: orderType === 'dine_in' ? selectedTable : undefined,
         notes: orderNotes || undefined,
         createKot: true,
+        kitchenId: selectedKitchen || undefined, // Include kitchen ID (backend will auto-select if not provided)
         items: cart.map((item) => ({
           menuItemId: item.menu_item.id,
           quantity: item.quantity,
@@ -388,6 +455,107 @@ const OrdersPage: React.FC = () => {
       toast.error(error.response?.data?.message || 'Failed to update item');
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const handlePrint = useReactToPrint({
+    contentRef: printRef,
+    documentTitle: printSource
+      ? `Order-${printSource.order.order_number}`
+      : selectedOrder
+        ? `Order-${selectedOrder.order_number}`
+        : 'Order',
+    onAfterPrint: () => toast.success('Print dialog opened'),
+  });
+
+  const triggerPrint = useCallback((order: OrderRow, payments: Payment[] = []) => {
+    setPrintSource({ order, payments });
+    setPendingPrint(true);
+  }, []);
+
+  useEffect(() => {
+    if (!pendingPrint || !printSource) return;
+
+    const timer = window.setTimeout(() => {
+      handlePrint();
+      setPendingPrint(false);
+    }, 100);
+
+    return () => window.clearTimeout(timer);
+  }, [pendingPrint, printSource, handlePrint]);
+
+  const handlePrintFromList = async (order: OrderRow) => {
+    try {
+      setPrintLoading(order.id);
+      const full = await orderService.get(order.id);
+      let payments: Payment[] = [];
+      try {
+        payments = await paymentService.getOrderPayments(order.id);
+      } catch {
+        // Continue without payment details
+      }
+      // Use Bluetooth printer instead of browser print
+      await printWithThermalPrinter(full, payments);
+    } catch (error: any) {
+      if (axios.isCancel(error) || error?.response?.status === 401) return;
+      toast.error(error.response?.data?.message || 'Failed to load order for printing');
+    } finally {
+      setPrintLoading(null);
+    }
+  };
+
+  const handlePrintFromModal = () => {
+    if (!selectedOrder) return;
+    // Use Bluetooth printer instead of browser print
+    printWithThermalPrinter(selectedOrder, orderPayments);
+  };
+
+  /**
+   * Print using Bluetooth thermal printer (same as KOT side) - always tries Bluetooth first
+   */
+  const printWithThermalPrinter = async (order: OrderRow, payments: Payment[] = []) => {
+    try {
+      const formatStatus = (status: string) =>
+        (status || '').replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+
+      // Prepare order data for Bluetooth printer
+      const orderData = {
+        order_number: order.order_number,
+        restaurant_name: order.branch?.restaurant?.name || 'Restaurant',
+        branch_name: order.branch?.name,
+        table: order.table
+          ? {
+              table_number: order.table.table_number
+                ? `${order.table.table_number}${order.table.name ? ` (${order.table.name})` : ''}`
+                : 'N/A',
+            }
+          : null,
+        order_items: (order.order_items || []).map(item => ({
+          item_name: item.item_name,
+          quantity: item.quantity,
+          unit_price: Number(item.price),
+          total: Number(item.total),
+        })),
+        subtotal: Number(order.subtotal),
+        tax_amount: Number(order.tax_amount),
+        discount_amount: Number(order.discount_amount || 0),
+        grand_total: Number(order.grand_total),
+        payment_method: payments.length > 0 ? formatStatus(payments[0].payment_method) : undefined,
+      };
+
+      try {
+        // Try to print with Bluetooth printer (same as KOT side)
+        await printBillBluetooth(orderData);
+        toast.success('Order sent to Bluetooth printer!');
+      } catch (btError: any) {
+        console.warn('Bluetooth print failed, using fallback:', btError);
+        // Fallback to browser print dialog if Bluetooth fails
+        printBillFallback(orderData);
+        toast.info('Using browser print (Bluetooth unavailable)');
+      }
+    } catch (error: any) {
+      console.error('Print error:', error);
+      toast.error(error.message || 'Failed to print order');
     }
   };
 
@@ -470,14 +638,29 @@ const OrdersPage: React.FC = () => {
       id: 'actions',
       header: 'Actions',
       cell: ({ row }) => (
-        <Button
-          size="sm"
-          variant="ghost"
-          leftIcon={<Eye className="h-4 w-4" />}
-          onClick={() => openDetail(row.original)}
-        >
-          View
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            size="sm"
+            variant="ghost"
+            leftIcon={<Eye className="h-4 w-4" />}
+            onClick={() => openDetail(row.original)}
+          >
+            View
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            leftIcon={<Printer className="h-4 w-4" />}
+            disabled={printLoading === row.original.id}
+            onClick={(e) => {
+              e.stopPropagation();
+              handlePrintFromList(row.original);
+            }}
+            title="Print order"
+          >
+            {printLoading === row.original.id ? '...' : 'Print'}
+          </Button>
+        </div>
       ),
     },
   ];
@@ -545,14 +728,30 @@ const OrdersPage: React.FC = () => {
       <Modal
         open={showDetailModal}
         onClose={() => setShowDetailModal(false)}
-        title={selectedOrder ? `Order ${selectedOrder.order_number}` : 'Order Details'}
+        title={
+          <div className="flex items-center justify-between w-full pr-8">
+            <span>{selectedOrder ? `Order ${selectedOrder.order_number}` : 'Order Details'}</span>
+            {selectedOrder && (
+              <Button
+                size="sm"
+                variant="outline"
+                leftIcon={<Printer className="h-4 w-4" />}
+                onClick={handlePrintFromModal}
+              >
+                Print
+              </Button>
+            )}
+          </div>
+        }
         size="xl"
+        scrollBody={false}
+        contentClassName="flex flex-col max-h-[calc(100vh-12rem)] overflow-hidden"
       >
         {detailLoading || !selectedOrder ? (
           <div className="py-12 text-center text-gray-500">Loading...</div>
         ) : (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="flex flex-col min-h-0 flex-1 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 shrink-0">
               <div>
                 <p className="text-xs text-gray-500 dark:text-gray-400">Table / Type</p>
                 <p className="font-medium text-gray-900 dark:text-gray-100">
@@ -592,14 +791,16 @@ const OrdersPage: React.FC = () => {
             </div>
 
             {selectedOrder.special_instructions && (
-              <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 p-3 text-sm text-amber-800 dark:text-amber-300">
+              <div className="rounded-lg bg-amber-50 dark:bg-amber-900/20 p-3 text-sm text-amber-800 dark:text-amber-300 shrink-0">
                 Notes: {selectedOrder.special_instructions}
               </div>
             )}
 
-            <div>
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3">Items</h3>
-              <div className="space-y-2 max-h-64 overflow-y-auto">
+            <div className="flex flex-col min-h-0 flex-1">
+              <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 shrink-0">
+                Items
+              </h3>
+              <div className="space-y-2 min-h-[120px] max-h-[280px] overflow-y-auto scrollbar-visible pr-1 border border-gray-200 dark:border-gray-700 rounded-lg p-2">
                 {(selectedOrder.order_items || []).map((item) => (
                   <div
                     key={item.id}
@@ -643,7 +844,7 @@ const OrdersPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2 text-sm">
+            <div className="border-t border-gray-200 dark:border-gray-700 pt-4 space-y-2 text-sm shrink-0">
               <div className="flex justify-between">
                 <span className="text-gray-500">Subtotal</span>
                 <span>{money(selectedOrder.subtotal)}</span>
@@ -663,7 +864,7 @@ const OrdersPage: React.FC = () => {
             </div>
 
             {isEditable && (
-              <div className="flex flex-col gap-3 border-t border-gray-200 dark:border-gray-700 pt-4">
+              <div className="flex flex-col gap-3 border-t border-gray-200 dark:border-gray-700 pt-4 shrink-0">
                 <div className="flex flex-wrap items-center gap-2">
                   <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Update status:
@@ -709,6 +910,20 @@ const OrdersPage: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      {/* Off-screen printable receipt (must not use display:none) */}
+      <div aria-hidden="true" className="fixed left-[-9999px] top-0 w-[800px]">
+        {(printSource || selectedOrder) && (
+          <PrintableOrderReceipt
+            ref={printRef}
+            order={{
+              ...(printSource?.order || selectedOrder!),
+              payments: printSource?.payments ?? orderPayments,
+            }}
+            showPaymentDetails={true}
+          />
+        )}
+      </div>
 
       {/* Create Order Modal */}
       <Modal

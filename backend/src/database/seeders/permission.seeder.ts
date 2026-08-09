@@ -107,9 +107,13 @@ export const seedPermissions = async () => {
       const permission = permissionRepository.create(permissionData);
       await permissionRepository.save(permission);
     } else if (existing.deleted_at) {
+      // Restore soft-deleted permission
       existing.deleted_at = null;
       existing.deleted_by = null;
       await permissionRepository.save(existing);
     }
+    // If active & already exists — no-op (skip silently)
   }
+
+  console.log(`✅ Permissions: ${permissions.length} definitions processed (insert or skip)`);
 };

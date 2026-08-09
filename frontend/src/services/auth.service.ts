@@ -20,6 +20,7 @@ class AuthService {
       localStorage.setItem('accessToken', response.data.data.accessToken);
       localStorage.setItem('refreshToken', response.data.data.refreshToken);
       localStorage.setItem('user', JSON.stringify(response.data.data.user));
+      apiService.resetSessionState();
     }
     
     return response.data;
@@ -33,6 +34,7 @@ class AuthService {
       localStorage.setItem('accessToken', response.data.data.accessToken);
       localStorage.setItem('refreshToken', response.data.data.refreshToken);
       localStorage.setItem('user', JSON.stringify(response.data.data.user));
+      apiService.resetSessionState();
     }
     
     return response.data;

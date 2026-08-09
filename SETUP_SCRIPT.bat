@@ -47,14 +47,19 @@ if errorlevel 1 (
 echo SUCCESS: MySQL is running
 echo.
 
-echo [Step 2/6] Creating database...
-mysql -u root -e "CREATE DATABASE IF NOT EXISTS restaurant_erp;"
+echo [Step 2/6] Creating database if not exists...
+REM Read DB_NAME from backend/.env if available, fallback to restaurant_erp
+set "DB_NAME=restaurant_erp"
+if exist "backend\.env" (
+  for /f "usebackq tokens=1,* delims==" %%A in (`findstr /B /C:"DB_NAME=" "backend\.env"`) do set "DB_NAME=%%B"
+)
+mysql -u root -e "CREATE DATABASE IF NOT EXISTS %DB_NAME%;"
 if errorlevel 1 (
     echo ERROR: Failed to create database
     pause
     exit /b 1
 )
-echo SUCCESS: Database created
+echo SUCCESS: Database %DB_NAME% ready
 echo.
 
 echo [Step 3/6] Cleaning leftover nested node_modules...
@@ -85,13 +90,23 @@ echo SUCCESS: Migrations completed
 echo.
 
 echo [Step 6/6] Seeding database...
-call npm run seed
-if errorlevel 1 (
-    echo ERROR: Seeding failed
-    pause
-    exit /b 1
+REM Only seed if seeder_logs has fewer than 10 entries (fresh DB or incomplete seed)
+set "SEED_COUNT=0"
+for /f %%C in ('mysql -u root -D %DB_NAME% -s -N -e "SELECT COUNT(*) FROM seeder_logs" 2^>nul') do set "SEED_COUNT=%%C"
+
+if "%SEED_COUNT%"=="10" (
+    echo SKIP: All 10 seeders already applied ^(seeder_logs has 10 entries^)
+    echo       Delete rows from seeder_logs table to force re-seed.
+) else (
+    echo Running seed ^(found %SEED_COUNT%/10 seeder_logs entries^)...
+    call npm run seed
+    if errorlevel 1 (
+        echo ERROR: Seeding failed
+        pause
+        exit /b 1
+    )
+    echo SUCCESS: Database seeded
 )
-echo SUCCESS: Database seeded
 echo.
 
 echo ========================================

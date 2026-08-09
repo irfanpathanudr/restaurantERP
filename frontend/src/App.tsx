@@ -5,6 +5,8 @@ import { setUser, setLoading } from './store/slices/authSlice';
 import { setTheme } from './store/slices/uiSlice';
 import { authService } from './services/auth.service';
 import { useAuth } from './hooks/useAuth';
+import { apiService } from './services/api.service';
+import { clearAuthStorage, getAccessToken, isTokenExpired } from './utils/session';
 
 // Layouts
 import AuthLayout from './layouts/AuthLayout';
@@ -101,10 +103,10 @@ function App() {
     const initAuth = async () => {
       dispatch(setLoading(true));
       try {
-        const token = localStorage.getItem('accessToken');
+        const token = getAccessToken();
 
-        if (!token) {
-          // No token — definitely not authenticated
+        if (!token || isTokenExpired(token)) {
+          clearAuthStorage();
           dispatch(setUser(null));
           return;
         }
@@ -113,26 +115,23 @@ function App() {
         try {
           const user = await authService.getCurrentUser();
           dispatch(setUser(user));
+          apiService.resetSessionState();
         } catch (apiError: any) {
           const status = apiError?.response?.status;
 
           if (status === 401) {
-            // Token is invalid/expired and refresh also failed — clear everything
-            localStorage.removeItem('accessToken');
-            localStorage.removeItem('refreshToken');
-            localStorage.removeItem('user');
+            clearAuthStorage();
             dispatch(setUser(null));
           } else {
-            // Network error or server unavailable — restore from localStorage cache
-            // so the user isn't logged out due to a transient backend issue
             const cached = localStorage.getItem('user');
-            if (cached) {
+            if (cached && !isTokenExpired(token)) {
               try {
                 dispatch(setUser(JSON.parse(cached)));
               } catch {
                 dispatch(setUser(null));
               }
             } else {
+              clearAuthStorage();
               dispatch(setUser(null));
             }
           }

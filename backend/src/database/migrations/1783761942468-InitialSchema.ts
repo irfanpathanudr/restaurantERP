@@ -1,599 +1,1012 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
+/**
+ * Complete base schema migration.
+ * Creates all tables from scratch — safe to run on a fresh empty database.
+ * The original auto-generated migration was a diff against an existing DB
+ * and failed on fresh installs.  This replaces it.
+ */
 export class InitialSchema1783761942468 implements MigrationInterface {
-    name = 'InitialSchema1783761942468'
+  name = 'InitialSchema1783761942468';
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`CREATE TABLE \`payments\` (\`id\` varchar(36) NOT NULL, \`created_at\` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), \`deleted_at\` timestamp(6) NULL, \`created_by\` varchar(36) NULL, \`updated_by\` varchar(36) NULL, \`deleted_by\` varchar(36) NULL, \`status\` varchar(50) NOT NULL DEFAULT 'active', \`is_active\` tinyint NOT NULL DEFAULT 1, \`remarks\` text NULL, \`payment_number\` varchar(50) NOT NULL, \`order_id\` varchar(36) NOT NULL, \`payment_method\` enum ('cash', 'card', 'upi', 'wallet', 'credit', 'bank_transfer') NOT NULL, \`payment_gateway\` enum ('razorpay', 'paytm', 'phonepe', 'gpay', 'stripe', 'manual') NOT NULL DEFAULT 'manual', \`amount\` decimal(10,2) NOT NULL, \`transaction_id\` varchar(255) NULL, \`reference_number\` varchar(255) NULL, \`payment_status\` varchar(50) NOT NULL DEFAULT 'success', \`payment_date\` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP, \`notes\` text NULL, \`processed_by\` varchar(36) NULL, UNIQUE INDEX \`IDX_37f40df34aab6084881c0ceebd\` (\`payment_number\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
-        await queryRunner.query(`CREATE TABLE \`kots\` (\`id\` varchar(36) NOT NULL, \`created_at\` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), \`deleted_at\` timestamp(6) NULL, \`created_by\` varchar(36) NULL, \`updated_by\` varchar(36) NULL, \`deleted_by\` varchar(36) NULL, \`status\` varchar(50) NOT NULL DEFAULT 'active', \`is_active\` tinyint NOT NULL DEFAULT 1, \`remarks\` text NULL, \`kot_number\` varchar(50) NOT NULL, \`order_id\` varchar(36) NOT NULL, \`kitchen_id\` varchar(36) NOT NULL, \`kot_status\` enum ('pending', 'in_progress', 'ready', 'served', 'cancelled') NOT NULL DEFAULT 'pending', \`priority\` enum ('normal', 'high', 'urgent') NOT NULL DEFAULT 'normal', \`items\` json NOT NULL, \`chef_id\` varchar(36) NULL, \`waiter_id\` varchar(36) NULL, \`special_instructions\` text NULL, \`started_at\` timestamp NULL, \`ready_at\` timestamp NULL, \`served_at\` timestamp NULL, \`cancelled_at\` timestamp NULL, \`preparation_time\` int NULL, \`elapsed_time\` int NULL, \`is_merged\` tinyint NOT NULL DEFAULT 0, \`merged_with_kot_id\` varchar(36) NULL, \`print_count\` int NOT NULL DEFAULT '0', \`cancellation_reason\` text NULL, UNIQUE INDEX \`IDX_4aa4293123692fb7c45166c668\` (\`kot_number\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
-        await queryRunner.query(`CREATE TABLE \`invoices\` (\`id\` varchar(36) NOT NULL, \`created_at\` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), \`deleted_at\` timestamp(6) NULL, \`created_by\` varchar(36) NULL, \`updated_by\` varchar(36) NULL, \`deleted_by\` varchar(36) NULL, \`status\` varchar(50) NOT NULL DEFAULT 'active', \`is_active\` tinyint NOT NULL DEFAULT 1, \`remarks\` text NULL, \`invoice_number\` varchar(50) NOT NULL, \`invoice_type\` enum ('invoice', 'credit_note', 'debit_note') NOT NULL DEFAULT 'invoice', \`order_id\` varchar(36) NOT NULL, \`customer_id\` varchar(36) NULL, \`branch_id\` varchar(36) NOT NULL, \`invoice_date\` date NOT NULL, \`subtotal\` decimal(10,2) NOT NULL, \`discount_amount\` decimal(10,2) NOT NULL DEFAULT '0.00', \`cgst_amount\` decimal(10,2) NOT NULL DEFAULT '0.00', \`cgst_percentage\` decimal(5,2) NOT NULL DEFAULT '0.00', \`sgst_amount\` decimal(10,2) NOT NULL DEFAULT '0.00', \`sgst_percentage\` decimal(5,2) NOT NULL DEFAULT '0.00', \`igst_amount\` decimal(10,2) NOT NULL DEFAULT '0.00', \`igst_percentage\` decimal(5,2) NOT NULL DEFAULT '0.00', \`service_charge\` decimal(10,2) NOT NULL DEFAULT '0.00', \`rounding_amount\` decimal(10,2) NOT NULL DEFAULT '0.00', \`grand_total\` decimal(10,2) NOT NULL, \`notes\` text NULL, \`pdf_path\` varchar(255) NULL, \`qr_code\` text NULL, \`generated_by\` varchar(36) NULL, \`print_count\` int NOT NULL DEFAULT '0', \`is_duplicate\` tinyint NOT NULL DEFAULT 0, UNIQUE INDEX \`IDX_d8f8d3788694e1b3f96c42c36f\` (\`invoice_number\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
-        await queryRunner.query(`CREATE TABLE \`expenses\` (\`id\` varchar(36) NOT NULL, \`created_at\` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), \`deleted_at\` timestamp(6) NULL, \`created_by\` varchar(36) NULL, \`updated_by\` varchar(36) NULL, \`deleted_by\` varchar(36) NULL, \`status\` varchar(50) NOT NULL DEFAULT 'active', \`is_active\` tinyint NOT NULL DEFAULT 1, \`remarks\` text NULL, \`expense_number\` varchar(50) NOT NULL, \`branch_id\` varchar(36) NOT NULL, \`category\` enum ('electricity', 'gas', 'rent', 'maintenance', 'marketing', 'petty_cash', 'salary', 'transportation', 'office_supplies', 'miscellaneous') NOT NULL, \`title\` varchar(255) NOT NULL, \`description\` text NULL, \`amount\` decimal(10,2) NOT NULL, \`expense_date\` date NOT NULL, \`expense_status\` enum ('pending', 'approved', 'rejected', 'paid') NOT NULL DEFAULT 'pending', \`vendor_name\` varchar(255) NULL, \`bill_number\` varchar(255) NULL, \`attachment\` varchar(255) NULL, \`approved_by\` varchar(36) NULL, \`approved_at\` timestamp NULL, \`rejection_reason\` text NULL, \`is_recurring\` tinyint NOT NULL DEFAULT 0, \`recurring_frequency\` varchar(50) NULL, UNIQUE INDEX \`IDX_c104942da407cb31c7e6b5b40a\` (\`expense_number\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
-        await queryRunner.query(`CREATE TABLE \`employees\` (\`id\` varchar(36) NOT NULL, \`created_at\` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), \`deleted_at\` timestamp(6) NULL, \`created_by\` varchar(36) NULL, \`updated_by\` varchar(36) NULL, \`deleted_by\` varchar(36) NULL, \`status\` varchar(50) NOT NULL DEFAULT 'active', \`is_active\` tinyint NOT NULL DEFAULT 1, \`remarks\` text NULL, \`employee_code\` varchar(50) NOT NULL, \`user_id\` varchar(36) NULL, \`first_name\` varchar(100) NOT NULL, \`last_name\` varchar(100) NOT NULL, \`email\` varchar(255) NULL, \`phone\` varchar(20) NOT NULL, \`date_of_birth\` date NOT NULL, \`gender\` enum ('male', 'female', 'other') NOT NULL, \`address\` text NULL, \`city\` varchar(100) NULL, \`state\` varchar(100) NULL, \`pincode\` varchar(20) NULL, \`branch_id\` varchar(36) NOT NULL, \`designation\` varchar(100) NOT NULL, \`department\` varchar(100) NOT NULL, \`employment_type\` enum ('full_time', 'part_time', 'contract', 'temporary') NOT NULL DEFAULT 'full_time', \`joining_date\` date NOT NULL, \`confirmation_date\` date NULL, \`resignation_date\` date NULL, \`relieving_date\` date NULL, \`basic_salary\` decimal(10,2) NOT NULL, \`gross_salary\` decimal(10,2) NOT NULL DEFAULT '0.00', \`pan_number\` varchar(50) NULL, \`aadhar_number\` varchar(50) NULL, \`uan_number\` varchar(50) NULL, \`esi_number\` varchar(50) NULL, \`bank_name\` varchar(100) NULL, \`bank_account_number\` varchar(50) NULL, \`bank_ifsc_code\` varchar(50) NULL, \`photo\` varchar(255) NULL, \`documents\` json NULL, \`emergency_contact_name\` varchar(20) NULL, \`emergency_contact_phone\` varchar(20) NULL, \`emergency_contact_relation\` varchar(100) NULL, \`notes\` text NULL, UNIQUE INDEX \`IDX_56162b5f24af743a154680684f\` (\`employee_code\`), PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
-        await queryRunner.query(`CREATE TABLE \`audit_logs\` (\`id\` varchar(36) NOT NULL, \`created_at\` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), \`deleted_at\` timestamp(6) NULL, \`created_by\` varchar(36) NULL, \`updated_by\` varchar(36) NULL, \`deleted_by\` varchar(36) NULL, \`status\` varchar(50) NOT NULL DEFAULT 'active', \`is_active\` tinyint NOT NULL DEFAULT 1, \`remarks\` text NULL, \`user_id\` varchar(36) NULL, \`action\` enum ('create', 'update', 'delete', 'login', 'logout', 'payment', 'permission_change') NOT NULL, \`entity_type\` varchar(100) NOT NULL, \`entity_id\` varchar(36) NULL, \`old_values\` json NULL, \`new_values\` json NULL, \`ip_address\` varchar(50) NULL, \`user_agent\` text NULL, \`description\` text NULL, PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
-        await queryRunner.query(`CREATE TABLE \`attendances\` (\`id\` varchar(36) NOT NULL, \`created_at\` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6), \`updated_at\` timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6), \`deleted_at\` timestamp(6) NULL, \`created_by\` varchar(36) NULL, \`updated_by\` varchar(36) NULL, \`deleted_by\` varchar(36) NULL, \`status\` varchar(50) NOT NULL DEFAULT 'active', \`is_active\` tinyint NOT NULL DEFAULT 1, \`remarks\` text NULL, \`employee_id\` varchar(36) NOT NULL, \`attendance_date\` date NOT NULL, \`attendance_status\` enum ('present', 'absent', 'half_day', 'leave', 'holiday', 'week_off') NOT NULL DEFAULT 'present', \`check_in_time\` time NULL, \`check_out_time\` time NULL, \`total_hours\` decimal(5,2) NOT NULL DEFAULT '0.00', \`overtime_hours\` decimal(5,2) NOT NULL DEFAULT '0.00', \`notes\` text NULL, \`approved_by\` varchar(36) NULL, \`approved_at\` timestamp NULL, PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
-        await queryRunner.query(`CREATE TABLE \`role_permissions\` (\`role_id\` varchar(36) NOT NULL, \`permission_id\` varchar(36) NOT NULL, INDEX \`IDX_178199805b901ccd220ab7740e\` (\`role_id\`), INDEX \`IDX_17022daf3f885f7d35423e9971\` (\`permission_id\`), PRIMARY KEY (\`role_id\`, \`permission_id\`)) ENGINE=InnoDB`);
-        await queryRunner.query(`CREATE TABLE \`menu_item_kitchens\` (\`menu_item_id\` varchar(36) NOT NULL, \`kitchen_id\` varchar(36) NOT NULL, INDEX \`IDX_e4ee78a1bde86e4a05e76cc5c0\` (\`menu_item_id\`), INDEX \`IDX_417409ed989390da9f90513579\` (\`kitchen_id\`), PRIMARY KEY (\`menu_item_id\`, \`kitchen_id\`)) ENGINE=InnoDB`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`remarks\` \`remarks\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`company_name\` \`company_name\` varchar(255) NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`contact_person\` \`contact_person\` varchar(100) NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`email\` \`email\` varchar(255) NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`alternate_phone\` \`alternate_phone\` varchar(20) NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`address\` \`address\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`city\` \`city\` varchar(100) NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`state\` \`state\` varchar(100) NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`country\` \`country\` varchar(100) NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`pincode\` \`pincode\` varchar(20) NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`gst_number\` \`gst_number\` varchar(50) NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`pan_number\` \`pan_number\` varchar(50) NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`bank_name\` \`bank_name\` varchar(100) NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`bank_account_number\` \`bank_account_number\` varchar(50) NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`bank_ifsc_code\` \`bank_ifsc_code\` varchar(50) NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` DROP COLUMN \`documents\``);
-        await queryRunner.query(`ALTER TABLE \`vendors\` ADD \`documents\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`notes\` \`notes\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`permission_groups\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`permission_groups\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`permission_groups\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`permission_groups\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`permission_groups\` CHANGE \`remarks\` \`remarks\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`permission_groups\` CHANGE \`description\` \`description\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`permissions\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`permissions\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`permissions\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`permissions\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`permissions\` CHANGE \`remarks\` \`remarks\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`permissions\` CHANGE \`description\` \`description\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`permissions\` CHANGE \`resource\` \`resource\` varchar(255) NULL`);
-        await queryRunner.query(`ALTER TABLE \`permissions\` CHANGE \`action\` \`action\` varchar(50) NULL`);
-        await queryRunner.query(`ALTER TABLE \`permissions\` CHANGE \`permission_group_id\` \`permission_group_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`roles\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`roles\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`roles\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`roles\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`roles\` CHANGE \`remarks\` \`remarks\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`roles\` CHANGE \`description\` \`description\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`roles\` CHANGE \`parent_role_id\` \`parent_role_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`remarks\` \`remarks\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`phone\` \`phone\` varchar(20) NULL`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`avatar\` \`avatar\` varchar(255) NULL`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`last_login_at\` \`last_login_at\` timestamp NULL`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`last_login_ip\` \`last_login_ip\` varchar(50) NULL`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`last_login_device\` \`last_login_device\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`locked_until\` \`locked_until\` timestamp NULL`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`reset_token\` \`reset_token\` varchar(255) NULL`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`reset_token_expiry\` \`reset_token_expiry\` timestamp NULL`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`otp\` \`otp\` varchar(10) NULL`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`otp_expiry\` \`otp_expiry\` timestamp NULL`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`role_id\` \`role_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`branch_id\` \`branch_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`user_permissions\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`user_permissions\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`user_permissions\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`user_permissions\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`user_permissions\` CHANGE \`remarks\` \`remarks\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`remarks\` \`remarks\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`description\` \`description\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`logo\` \`logo\` varchar(255) NULL`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`email\` \`email\` varchar(255) NULL`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`website\` \`website\` varchar(255) NULL`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`gst_number\` \`gst_number\` varchar(50) NULL`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`pan_number\` \`pan_number\` varchar(50) NULL`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`fssai_license\` \`fssai_license\` varchar(100) NULL`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`remarks\` \`remarks\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`description\` \`description\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`location\` \`location\` varchar(100) NULL`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`manager_id\` \`manager_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`printer_ip\` \`printer_ip\` varchar(255) NULL`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`printer_port\` \`printer_port\` int NULL`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`remarks\` \`remarks\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`description\` \`description\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`email\` \`email\` varchar(255) NULL`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`gst_number\` \`gst_number\` varchar(50) NULL`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`latitude\` \`latitude\` decimal(10,6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`longitude\` \`longitude\` decimal(10,6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`parent_branch_id\` \`parent_branch_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`manager_id\` \`manager_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`branches\` DROP COLUMN \`business_hours\``);
-        await queryRunner.query(`ALTER TABLE \`branches\` ADD \`business_hours\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`branches\` DROP COLUMN \`tax_configuration\``);
-        await queryRunner.query(`ALTER TABLE \`branches\` ADD \`tax_configuration\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`remarks\` \`remarks\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`dining_area\` \`dining_area\` varchar(100) NULL`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`position_x\` \`position_x\` decimal(10,2) NULL`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`position_y\` \`position_y\` decimal(10,2) NULL`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`width\` \`width\` decimal(5,2) NULL`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`height\` \`height\` decimal(5,2) NULL`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`current_order_id\` \`current_order_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`merged_with_table_id\` \`merged_with_table_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`remarks\` \`remarks\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`email\` \`email\` varchar(255) NULL`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`address\` \`address\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`city\` \`city\` varchar(100) NULL`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`state\` \`state\` varchar(100) NULL`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`pincode\` \`pincode\` varchar(20) NULL`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`date_of_birth\` \`date_of_birth\` date NULL`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`anniversary_date\` \`anniversary_date\` date NULL`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`membership_tier\` \`membership_tier\` enum ('silver', 'gold', 'platinum') NULL`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`last_visit_date\` \`last_visit_date\` timestamp NULL`);
-        await queryRunner.query(`ALTER TABLE \`customers\` DROP COLUMN \`favorite_items\``);
-        await queryRunner.query(`ALTER TABLE \`customers\` ADD \`favorite_items\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`notes\` \`notes\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`gst_number\` \`gst_number\` varchar(50) NULL`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`remarks\` \`remarks\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`customer_id\` \`customer_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`customer_email\` \`customer_email\` varchar(255) NULL`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`table_id\` \`table_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`special_requests\` \`special_requests\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`confirmed_at\` \`confirmed_at\` timestamp NULL`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`cancelled_at\` \`cancelled_at\` timestamp NULL`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`checked_in_at\` \`checked_in_at\` timestamp NULL`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`cancellation_reason\` \`cancellation_reason\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`categories\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`categories\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`categories\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`categories\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`categories\` CHANGE \`remarks\` \`remarks\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`categories\` CHANGE \`description\` \`description\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`categories\` CHANGE \`image\` \`image\` varchar(255) NULL`);
-        await queryRunner.query(`ALTER TABLE \`categories\` CHANGE \`parent_category_id\` \`parent_category_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`remarks\` \`remarks\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`description\` \`description\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`cost_price\` \`cost_price\` decimal(10,2) NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`preparation_time\` \`preparation_time\` int NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`image\` \`image\` varchar(255) NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` DROP COLUMN \`gallery\``);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` ADD \`gallery\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`barcode\` \`barcode\` varchar(255) NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`qr_code\` \`qr_code\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` DROP COLUMN \`nutritional_values\``);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` ADD \`nutritional_values\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` DROP COLUMN \`allergens\``);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` ADD \`allergens\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` DROP COLUMN \`combo_items\``);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` ADD \`combo_items\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` DROP COLUMN \`variants\``);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` ADD \`variants\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` DROP COLUMN \`add_ons\``);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` ADD \`add_ons\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` DROP COLUMN \`modifiers\``);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` ADD \`modifiers\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` DROP COLUMN \`dynamic_pricing\``);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` ADD \`dynamic_pricing\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`seasonal_price_start\` \`seasonal_price_start\` date NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`seasonal_price_end\` \`seasonal_price_end\` date NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`seasonal_price\` \`seasonal_price\` decimal(10,2) NULL`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`printer_id\` \`printer_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`recipes\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`recipes\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`recipes\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`recipes\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`recipes\` CHANGE \`remarks\` \`remarks\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`recipes\` CHANGE \`description\` \`description\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`recipes\` CHANGE \`preparation_time\` \`preparation_time\` int NULL`);
-        await queryRunner.query(`ALTER TABLE \`recipes\` CHANGE \`cooking_time\` \`cooking_time\` int NULL`);
-        await queryRunner.query(`ALTER TABLE \`recipes\` CHANGE \`preparation_steps\` \`preparation_steps\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`remarks\` \`remarks\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`description\` \`description\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`category_id\` \`category_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`preferred_vendor_id\` \`preferred_vendor_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`lead_time_days\` \`lead_time_days\` int NULL`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`shelf_life_days\` \`shelf_life_days\` int NULL`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`storage_location\` \`storage_location\` varchar(100) NULL`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`image\` \`image\` varchar(255) NULL`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`hsn_code\` \`hsn_code\` varchar(50) NULL`);
-        await queryRunner.query(`ALTER TABLE \`recipe_ingredients\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`recipe_ingredients\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`recipe_ingredients\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`recipe_ingredients\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`recipe_ingredients\` CHANGE \`remarks\` \`remarks\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`recipe_ingredients\` CHANGE \`preparation_notes\` \`preparation_notes\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` CHANGE \`remarks\` \`remarks\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` DROP COLUMN \`variants\``);
-        await queryRunner.query(`ALTER TABLE \`order_items\` ADD \`variants\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` DROP COLUMN \`add_ons\``);
-        await queryRunner.query(`ALTER TABLE \`order_items\` ADD \`add_ons\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` DROP COLUMN \`modifiers\``);
-        await queryRunner.query(`ALTER TABLE \`order_items\` ADD \`modifiers\` json NULL`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` CHANGE \`special_instructions\` \`special_instructions\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` CHANGE \`kot_id\` \`kot_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`remarks\` \`remarks\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`customer_id\` \`customer_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`table_id\` \`table_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`coupon_code\` \`coupon_code\` varchar(100) NULL`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`special_instructions\` \`special_instructions\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`cancellation_reason\` \`cancellation_reason\` text NULL`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`waiter_id\` \`waiter_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`cashier_id\` \`cashier_id\` varchar(36) NULL`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`ordered_at\` \`ordered_at\` timestamp NULL`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`confirmed_at\` \`confirmed_at\` timestamp NULL`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`completed_at\` \`completed_at\` timestamp NULL`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`cancelled_at\` \`cancelled_at\` timestamp NULL`);
-        await queryRunner.query(`ALTER TABLE \`permissions\` ADD CONSTRAINT \`FK_8f6f729862e4d1ab66c2f39cd08\` FOREIGN KEY (\`permission_group_id\`) REFERENCES \`permission_groups\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`users\` ADD CONSTRAINT \`FK_a2cecd1a3531c0b041e29ba46e1\` FOREIGN KEY (\`role_id\`) REFERENCES \`roles\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`user_permissions\` ADD CONSTRAINT \`FK_3495bd31f1862d02931e8e8d2e8\` FOREIGN KEY (\`user_id\`) REFERENCES \`users\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`user_permissions\` ADD CONSTRAINT \`FK_8145f5fadacd311693c15e41f10\` FOREIGN KEY (\`permission_id\`) REFERENCES \`permissions\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` ADD CONSTRAINT \`FK_6838bd799a8ec12f81d0a657e70\` FOREIGN KEY (\`branch_id\`) REFERENCES \`branches\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`branches\` ADD CONSTRAINT \`FK_1e384921d7d292c1705bff1a220\` FOREIGN KEY (\`restaurant_id\`) REFERENCES \`restaurants\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`tables\` ADD CONSTRAINT \`FK_283e6bfdd38a7cc7fec643f72b6\` FOREIGN KEY (\`branch_id\`) REFERENCES \`branches\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` ADD CONSTRAINT \`FK_30266aeb26fc1c25d3ea098b138\` FOREIGN KEY (\`branch_id\`) REFERENCES \`branches\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` ADD CONSTRAINT \`FK_f63cb79a34cdf2d47ab23f31a8b\` FOREIGN KEY (\`customer_id\`) REFERENCES \`customers\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` ADD CONSTRAINT \`FK_5027ce24b4bc5e090302b2f7754\` FOREIGN KEY (\`table_id\`) REFERENCES \`tables\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`categories\` ADD CONSTRAINT \`FK_de08738901be6b34d2824a1e243\` FOREIGN KEY (\`parent_category_id\`) REFERENCES \`categories\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` ADD CONSTRAINT \`FK_20cff56c44dd4fe52d5aa2b96f8\` FOREIGN KEY (\`category_id\`) REFERENCES \`categories\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`recipes\` ADD CONSTRAINT \`FK_ba90e79c045f10f0bcc6fbcd5cb\` FOREIGN KEY (\`menu_item_id\`) REFERENCES \`menu_items\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` ADD CONSTRAINT \`FK_0fc5e24afd3831fe1046c7b1ba0\` FOREIGN KEY (\`category_id\`) REFERENCES \`categories\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`recipe_ingredients\` ADD CONSTRAINT \`FK_f240137e0e13bed80bdf64fed53\` FOREIGN KEY (\`recipe_id\`) REFERENCES \`recipes\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`recipe_ingredients\` ADD CONSTRAINT \`FK_ef3305db4381f14d368ba1a4ca1\` FOREIGN KEY (\`raw_material_id\`) REFERENCES \`raw_materials\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` ADD CONSTRAINT \`FK_145532db85752b29c57d2b7b1f1\` FOREIGN KEY (\`order_id\`) REFERENCES \`orders\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` ADD CONSTRAINT \`FK_e462517174f561ece2916701c0a\` FOREIGN KEY (\`menu_item_id\`) REFERENCES \`menu_items\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`orders\` ADD CONSTRAINT \`FK_17b723da2c12837f4bc21e33398\` FOREIGN KEY (\`branch_id\`) REFERENCES \`branches\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`orders\` ADD CONSTRAINT \`FK_772d0ce0473ac2ccfa26060dbe9\` FOREIGN KEY (\`customer_id\`) REFERENCES \`customers\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`orders\` ADD CONSTRAINT \`FK_3d36410e89a795172fa6e0dd968\` FOREIGN KEY (\`table_id\`) REFERENCES \`tables\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`payments\` ADD CONSTRAINT \`FK_b2f7b823a21562eeca20e72b006\` FOREIGN KEY (\`order_id\`) REFERENCES \`orders\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`kots\` ADD CONSTRAINT \`FK_858a587cc6a59c4e231aade86fd\` FOREIGN KEY (\`order_id\`) REFERENCES \`orders\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`kots\` ADD CONSTRAINT \`FK_1cde65d4bae384023e32d272680\` FOREIGN KEY (\`kitchen_id\`) REFERENCES \`kitchens\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`invoices\` ADD CONSTRAINT \`FK_ea83c3b911906a3578de2340fdf\` FOREIGN KEY (\`order_id\`) REFERENCES \`orders\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`invoices\` ADD CONSTRAINT \`FK_65e3145f317bd655481d3f96c74\` FOREIGN KEY (\`customer_id\`) REFERENCES \`customers\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`invoices\` ADD CONSTRAINT \`FK_f8b468df52fb45053ad0c4ca38b\` FOREIGN KEY (\`branch_id\`) REFERENCES \`branches\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`expenses\` ADD CONSTRAINT \`FK_866a3b82ff438efc19c2398cda6\` FOREIGN KEY (\`branch_id\`) REFERENCES \`branches\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`employees\` ADD CONSTRAINT \`FK_2d83c53c3e553a48dadb9722e38\` FOREIGN KEY (\`user_id\`) REFERENCES \`users\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`employees\` ADD CONSTRAINT \`FK_457a39c666de2686596e502eb8c\` FOREIGN KEY (\`branch_id\`) REFERENCES \`branches\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`audit_logs\` ADD CONSTRAINT \`FK_bd2726fd31b35443f2245b93ba0\` FOREIGN KEY (\`user_id\`) REFERENCES \`users\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`attendances\` ADD CONSTRAINT \`FK_43dca8b4751d7449a38b583991c\` FOREIGN KEY (\`employee_id\`) REFERENCES \`employees\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`role_permissions\` ADD CONSTRAINT \`FK_178199805b901ccd220ab7740ec\` FOREIGN KEY (\`role_id\`) REFERENCES \`roles\`(\`id\`) ON DELETE CASCADE ON UPDATE CASCADE`);
-        await queryRunner.query(`ALTER TABLE \`role_permissions\` ADD CONSTRAINT \`FK_17022daf3f885f7d35423e9971e\` FOREIGN KEY (\`permission_id\`) REFERENCES \`permissions\`(\`id\`) ON DELETE NO ACTION ON UPDATE NO ACTION`);
-        await queryRunner.query(`ALTER TABLE \`menu_item_kitchens\` ADD CONSTRAINT \`FK_e4ee78a1bde86e4a05e76cc5c08\` FOREIGN KEY (\`menu_item_id\`) REFERENCES \`menu_items\`(\`id\`) ON DELETE CASCADE ON UPDATE CASCADE`);
-        await queryRunner.query(`ALTER TABLE \`menu_item_kitchens\` ADD CONSTRAINT \`FK_417409ed989390da9f90513579f\` FOREIGN KEY (\`kitchen_id\`) REFERENCES \`kitchens\`(\`id\`) ON DELETE CASCADE ON UPDATE CASCADE`);
-        await queryRunner.query(`CREATE TABLE \`query-result-cache\` (\`id\` int NOT NULL AUTO_INCREMENT, \`identifier\` varchar(255) NULL, \`time\` bigint NOT NULL, \`duration\` int NOT NULL, \`query\` text NOT NULL, \`result\` text NOT NULL, PRIMARY KEY (\`id\`)) ENGINE=InnoDB`);
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    /* ------------------------------------------------------------------ */
+    /* CORE RBAC TABLES                                                     */
+    /* ------------------------------------------------------------------ */
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`permission_groups\` (
+        \`id\`           varchar(36)  NOT NULL,
+        \`created_at\`   timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`   timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`   timestamp(6) NULL,
+        \`created_by\`   varchar(36)  NULL,
+        \`updated_by\`   varchar(36)  NULL,
+        \`deleted_by\`   varchar(36)  NULL,
+        \`status\`       varchar(50)  NOT NULL DEFAULT 'active',
+        \`is_active\`    tinyint      NOT NULL DEFAULT 1,
+        \`remarks\`      text         NULL,
+        \`name\`         varchar(100) NOT NULL,
+        \`code\`         varchar(100) NOT NULL,
+        \`description\`  text         NULL,
+        \`sort_order\`   int          NOT NULL DEFAULT 0,
+        UNIQUE INDEX \`UQ_pg_name\` (\`name\`),
+        UNIQUE INDEX \`UQ_pg_code\` (\`code\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`permissions\` (
+        \`id\`                  varchar(36)  NOT NULL,
+        \`created_at\`          timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`          timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`          timestamp(6) NULL,
+        \`created_by\`          varchar(36)  NULL,
+        \`updated_by\`          varchar(36)  NULL,
+        \`deleted_by\`          varchar(36)  NULL,
+        \`status\`              varchar(50)  NOT NULL DEFAULT 'active',
+        \`is_active\`           tinyint      NOT NULL DEFAULT 1,
+        \`remarks\`             text         NULL,
+        \`name\`                varchar(100) NOT NULL,
+        \`code\`                varchar(100) NOT NULL,
+        \`description\`         text         NULL,
+        \`type\`                enum('page','button','api','field','record','branch','kitchen') NOT NULL DEFAULT 'api',
+        \`resource\`            varchar(255) NULL,
+        \`action\`              varchar(50)  NULL,
+        \`permission_group_id\` varchar(36)  NULL,
+        UNIQUE INDEX \`UQ_perm_name\` (\`name\`),
+        UNIQUE INDEX \`UQ_perm_code\` (\`code\`),
+        INDEX \`IDX_perm_group\` (\`permission_group_id\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`roles\` (
+        \`id\`             varchar(36)  NOT NULL,
+        \`created_at\`     timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`     timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`     timestamp(6) NULL,
+        \`created_by\`     varchar(36)  NULL,
+        \`updated_by\`     varchar(36)  NULL,
+        \`deleted_by\`     varchar(36)  NULL,
+        \`status\`         varchar(50)  NOT NULL DEFAULT 'active',
+        \`is_active\`      tinyint      NOT NULL DEFAULT 1,
+        \`remarks\`        text         NULL,
+        \`name\`           varchar(100) NOT NULL,
+        \`code\`           varchar(100) NOT NULL,
+        \`description\`    text         NULL,
+        \`level\`          int          NOT NULL DEFAULT 0,
+        \`parent_role_id\` varchar(36)  NULL,
+        UNIQUE INDEX \`UQ_role_name\` (\`name\`),
+        UNIQUE INDEX \`UQ_role_code\` (\`code\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`role_permissions\` (
+        \`role_id\`       varchar(36) NOT NULL,
+        \`permission_id\` varchar(36) NOT NULL,
+        INDEX \`IDX_178199805b901ccd220ab7740e\` (\`role_id\`),
+        INDEX \`IDX_17022daf3f885f7d35423e9971\` (\`permission_id\`),
+        PRIMARY KEY (\`role_id\`, \`permission_id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`users\` (
+        \`id\`                        varchar(36)  NOT NULL,
+        \`created_at\`                timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`                timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`                timestamp(6) NULL,
+        \`created_by\`                varchar(36)  NULL,
+        \`updated_by\`                varchar(36)  NULL,
+        \`deleted_by\`                varchar(36)  NULL,
+        \`status\`                    varchar(50)  NOT NULL DEFAULT 'active',
+        \`is_active\`                 tinyint      NOT NULL DEFAULT 1,
+        \`remarks\`                   text         NULL,
+        \`email\`                     varchar(255) NOT NULL,
+        \`password\`                  varchar(255) NOT NULL,
+        \`first_name\`                varchar(100) NOT NULL,
+        \`last_name\`                 varchar(100) NOT NULL,
+        \`phone\`                     varchar(20)  NULL,
+        \`avatar\`                    varchar(255) NULL,
+        \`last_login_at\`             timestamp    NULL,
+        \`last_login_ip\`             varchar(50)  NULL,
+        \`last_login_device\`         text         NULL,
+        \`failed_login_attempts\`     int          NOT NULL DEFAULT 0,
+        \`locked_until\`              timestamp    NULL,
+        \`reset_token\`               varchar(255) NULL,
+        \`reset_token_expiry\`        timestamp    NULL,
+        \`otp\`                       varchar(10)  NULL,
+        \`otp_expiry\`                timestamp    NULL,
+        \`is_email_verified\`         tinyint      NOT NULL DEFAULT 0,
+        \`is_password_change_required\` tinyint    NOT NULL DEFAULT 1,
+        \`role_id\`                   varchar(36)  NULL,
+        \`branch_id\`                 varchar(36)  NULL,
+        UNIQUE INDEX \`UQ_user_email\` (\`email\`),
+        INDEX \`IDX_user_role\` (\`role_id\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`user_permissions\` (
+        \`id\`            varchar(36)  NOT NULL,
+        \`created_at\`    timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`    timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`    timestamp(6) NULL,
+        \`created_by\`    varchar(36)  NULL,
+        \`updated_by\`    varchar(36)  NULL,
+        \`deleted_by\`    varchar(36)  NULL,
+        \`status\`        varchar(50)  NOT NULL DEFAULT 'active',
+        \`is_active\`     tinyint      NOT NULL DEFAULT 1,
+        \`remarks\`       text         NULL,
+        \`user_id\`       varchar(36)  NOT NULL,
+        \`permission_id\` varchar(36)  NOT NULL,
+        \`is_granted\`    tinyint      NOT NULL DEFAULT 1,
+        UNIQUE INDEX \`UQ_user_perm\` (\`user_id\`, \`permission_id\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    /* ------------------------------------------------------------------ */
+    /* RESTAURANT / BRANCH / KITCHEN / TABLE                               */
+    /* ------------------------------------------------------------------ */
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`restaurants\` (
+        \`id\`            varchar(36)  NOT NULL,
+        \`created_at\`    timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`    timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`    timestamp(6) NULL,
+        \`created_by\`    varchar(36)  NULL,
+        \`updated_by\`    varchar(36)  NULL,
+        \`deleted_by\`    varchar(36)  NULL,
+        \`status\`        varchar(50)  NOT NULL DEFAULT 'active',
+        \`is_active\`     tinyint      NOT NULL DEFAULT 1,
+        \`remarks\`       text         NULL,
+        \`name\`          varchar(255) NOT NULL,
+        \`code\`          varchar(100) NOT NULL,
+        \`description\`   text         NULL,
+        \`logo\`          varchar(255) NULL,
+        \`address\`       text         NOT NULL,
+        \`city\`          varchar(100) NOT NULL,
+        \`state\`         varchar(100) NOT NULL,
+        \`country\`       varchar(100) NOT NULL,
+        \`pincode\`       varchar(20)  NOT NULL,
+        \`phone\`         varchar(20)  NOT NULL,
+        \`email\`         varchar(255) NULL,
+        \`website\`       varchar(255) NULL,
+        \`gst_number\`    varchar(50)  NULL,
+        \`pan_number\`    varchar(50)  NULL,
+        \`fssai_license\` varchar(100) NULL,
+        \`currency\`      varchar(10)  NOT NULL DEFAULT 'INR',
+        \`language\`      varchar(10)  NOT NULL DEFAULT 'en',
+        \`timezone\`      varchar(50)  NOT NULL DEFAULT 'Asia/Kolkata',
+        UNIQUE INDEX \`UQ_rest_code\` (\`code\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`branches\` (
+        \`id\`                       varchar(36)    NOT NULL,
+        \`created_at\`               timestamp(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`               timestamp(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`               timestamp(6)   NULL,
+        \`created_by\`               varchar(36)    NULL,
+        \`updated_by\`               varchar(36)    NULL,
+        \`deleted_by\`               varchar(36)    NULL,
+        \`status\`                   varchar(50)    NOT NULL DEFAULT 'active',
+        \`is_active\`                tinyint        NOT NULL DEFAULT 1,
+        \`remarks\`                  text           NULL,
+        \`name\`                     varchar(255)   NOT NULL,
+        \`code\`                     varchar(100)   NOT NULL,
+        \`description\`              text           NULL,
+        \`restaurant_id\`            varchar(36)    NOT NULL,
+        \`address\`                  text           NOT NULL,
+        \`city\`                     varchar(100)   NOT NULL,
+        \`state\`                    varchar(100)   NOT NULL,
+        \`country\`                  varchar(100)   NOT NULL,
+        \`pincode\`                  varchar(20)    NOT NULL,
+        \`phone\`                    varchar(20)    NOT NULL,
+        \`email\`                    varchar(255)   NULL,
+        \`gst_number\`               varchar(50)    NULL,
+        \`latitude\`                 decimal(10,6)  NULL,
+        \`longitude\`                decimal(10,6)  NULL,
+        \`parent_branch_id\`         varchar(36)    NULL,
+        \`manager_id\`               varchar(36)    NULL,
+        \`business_hours\`           json           NULL,
+        \`service_charge_percentage\` decimal(5,2)  NOT NULL DEFAULT 0,
+        \`tax_configuration\`        json           NULL,
+        UNIQUE INDEX \`UQ_branch_code\` (\`code\`),
+        INDEX \`IDX_branch_restaurant\` (\`restaurant_id\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`kitchens\` (
+        \`id\`           varchar(36)  NOT NULL,
+        \`created_at\`   timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`   timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`   timestamp(6) NULL,
+        \`created_by\`   varchar(36)  NULL,
+        \`updated_by\`   varchar(36)  NULL,
+        \`deleted_by\`   varchar(36)  NULL,
+        \`status\`       varchar(50)  NOT NULL DEFAULT 'active',
+        \`is_active\`    tinyint      NOT NULL DEFAULT 1,
+        \`remarks\`      text         NULL,
+        \`name\`         varchar(255) NOT NULL,
+        \`code\`         varchar(100) NOT NULL,
+        \`description\`  text         NULL,
+        \`branch_id\`    varchar(36)  NOT NULL,
+        \`location\`     varchar(100) NULL,
+        \`manager_id\`   varchar(36)  NULL,
+        \`printer_ip\`   varchar(255) NULL,
+        \`printer_port\` int          NULL,
+        \`sort_order\`   int          NOT NULL DEFAULT 0,
+        INDEX \`IDX_kitchen_branch\` (\`branch_id\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`tables\` (
+        \`id\`                    varchar(36)   NOT NULL,
+        \`created_at\`            timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`            timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`            timestamp(6)  NULL,
+        \`created_by\`            varchar(36)   NULL,
+        \`updated_by\`            varchar(36)   NULL,
+        \`deleted_by\`            varchar(36)   NULL,
+        \`status\`                varchar(50)   NOT NULL DEFAULT 'active',
+        \`is_active\`             tinyint       NOT NULL DEFAULT 1,
+        \`remarks\`               text          NULL,
+        \`name\`                  varchar(100)  NOT NULL,
+        \`table_number\`          varchar(50)   NOT NULL,
+        \`branch_id\`             varchar(36)   NOT NULL,
+        \`table_type\`            enum('2-seater','4-seater','6-seater','8-seater','custom') NOT NULL DEFAULT '4-seater',
+        \`capacity\`              int           NOT NULL DEFAULT 4,
+        \`table_status\`          enum('available','occupied','reserved','cleaning') NOT NULL DEFAULT 'available',
+        \`shape\`                 enum('round','square','rectangle') NOT NULL DEFAULT 'square',
+        \`dining_area\`           varchar(100)  NULL,
+        \`position_x\`            decimal(10,2) NULL,
+        \`position_y\`            decimal(10,2) NULL,
+        \`width\`                 decimal(5,2)  NULL,
+        \`height\`                decimal(5,2)  NULL,
+        \`sort_order\`            int           NOT NULL DEFAULT 0,
+        \`current_order_id\`      varchar(36)   NULL,
+        \`merged_with_table_id\`  varchar(36)   NULL,
+        \`is_merged\`             tinyint       NOT NULL DEFAULT 0,
+        INDEX \`IDX_table_branch\` (\`branch_id\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    /* ------------------------------------------------------------------ */
+    /* MENU                                                                 */
+    /* ------------------------------------------------------------------ */
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`categories\` (
+        \`id\`                 varchar(36)  NOT NULL,
+        \`created_at\`         timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`         timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`         timestamp(6) NULL,
+        \`created_by\`         varchar(36)  NULL,
+        \`updated_by\`         varchar(36)  NULL,
+        \`deleted_by\`         varchar(36)  NULL,
+        \`status\`             varchar(50)  NOT NULL DEFAULT 'active',
+        \`is_active\`          tinyint      NOT NULL DEFAULT 1,
+        \`remarks\`            text         NULL,
+        \`name\`               varchar(255) NOT NULL,
+        \`code\`               varchar(100) NOT NULL,
+        \`description\`        text         NULL,
+        \`image\`              varchar(255) NULL,
+        \`parent_category_id\` varchar(36)  NULL,
+        \`sort_order\`         int          NOT NULL DEFAULT 0,
+        UNIQUE INDEX \`UQ_cat_code\` (\`code\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`menu_items\` (
+        \`id\`                   varchar(36)    NOT NULL,
+        \`created_at\`           timestamp(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`           timestamp(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`           timestamp(6)   NULL,
+        \`created_by\`           varchar(36)    NULL,
+        \`updated_by\`           varchar(36)    NULL,
+        \`deleted_by\`           varchar(36)    NULL,
+        \`status\`               varchar(50)    NOT NULL DEFAULT 'active',
+        \`is_active\`            tinyint        NOT NULL DEFAULT 1,
+        \`remarks\`              text           NULL,
+        \`name\`                 varchar(255)   NOT NULL,
+        \`sku\`                  varchar(100)   NOT NULL,
+        \`description\`          text           NULL,
+        \`category_id\`          varchar(36)    NOT NULL,
+        \`price\`                decimal(10,2)  NOT NULL,
+        \`cost_price\`           decimal(10,2)  NULL,
+        \`food_type\`            enum('veg','non_veg','egg','jain') NOT NULL DEFAULT 'veg',
+        \`spicy_level\`          enum('none','mild','medium','hot','extra_hot') NOT NULL DEFAULT 'none',
+        \`portion_size\`         enum('small','medium','large','custom') NOT NULL DEFAULT 'medium',
+        \`preparation_time\`     int            NULL,
+        \`image\`                varchar(255)   NULL,
+        \`gallery\`              json           NULL,
+        \`barcode\`              varchar(255)   NULL,
+        \`qr_code\`              text           NULL,
+        \`nutritional_values\`   json           NULL,
+        \`allergens\`            json           NULL,
+        \`is_available\`         tinyint        NOT NULL DEFAULT 1,
+        \`is_combo\`             tinyint        NOT NULL DEFAULT 0,
+        \`combo_items\`          json           NULL,
+        \`variants\`             json           NULL,
+        \`add_ons\`              json           NULL,
+        \`modifiers\`            json           NULL,
+        \`dynamic_pricing\`      json           NULL,
+        \`seasonal_price_start\` date           NULL,
+        \`seasonal_price_end\`   date           NULL,
+        \`seasonal_price\`       decimal(10,2)  NULL,
+        \`printer_id\`           varchar(36)    NULL,
+        \`sort_order\`           int            NOT NULL DEFAULT 0,
+        \`total_sold\`           int            NOT NULL DEFAULT 0,
+        UNIQUE INDEX \`UQ_mi_sku\` (\`sku\`),
+        INDEX \`IDX_mi_category\` (\`category_id\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`menu_item_kitchens\` (
+        \`menu_item_id\` varchar(36) NOT NULL,
+        \`kitchen_id\`   varchar(36) NOT NULL,
+        INDEX \`IDX_e4ee78a1bde86e4a05e76cc5c0\` (\`menu_item_id\`),
+        INDEX \`IDX_417409ed989390da9f90513579\` (\`kitchen_id\`),
+        PRIMARY KEY (\`menu_item_id\`, \`kitchen_id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    /* ------------------------------------------------------------------ */
+    /* ORDERS / KOT / INVOICES / PAYMENTS                                  */
+    /* ------------------------------------------------------------------ */
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`customers\` (
+        \`id\`               varchar(36)    NOT NULL,
+        \`created_at\`       timestamp(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`       timestamp(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`       timestamp(6)   NULL,
+        \`created_by\`       varchar(36)    NULL,
+        \`updated_by\`       varchar(36)    NULL,
+        \`deleted_by\`       varchar(36)    NULL,
+        \`status\`           varchar(50)    NOT NULL DEFAULT 'active',
+        \`is_active\`        tinyint        NOT NULL DEFAULT 1,
+        \`remarks\`          text           NULL,
+        \`name\`             varchar(255)   NOT NULL,
+        \`phone\`            varchar(20)    NOT NULL,
+        \`email\`            varchar(255)   NULL,
+        \`address\`          text           NULL,
+        \`city\`             varchar(100)   NULL,
+        \`state\`            varchar(100)   NULL,
+        \`pincode\`          varchar(20)    NULL,
+        \`date_of_birth\`    date           NULL,
+        \`anniversary_date\` date           NULL,
+        \`membership_tier\`  enum('silver','gold','platinum') NULL,
+        \`loyalty_points\`   int            NOT NULL DEFAULT 0,
+        \`wallet_balance\`   decimal(10,2)  NOT NULL DEFAULT 0,
+        \`credit_limit\`     decimal(10,2)  NOT NULL DEFAULT 0,
+        \`outstanding_amount\` decimal(10,2) NOT NULL DEFAULT 0,
+        \`lifetime_value\`   decimal(10,2)  NOT NULL DEFAULT 0,
+        \`total_visits\`     int            NOT NULL DEFAULT 0,
+        \`last_visit_date\`  timestamp      NULL,
+        \`favorite_items\`   json           NULL,
+        \`notes\`            text           NULL,
+        \`gst_number\`       varchar(50)    NULL,
+        UNIQUE INDEX \`UQ_cust_email\` (\`email\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`orders\` (
+        \`id\`                    varchar(36)    NOT NULL,
+        \`created_at\`            timestamp(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`            timestamp(6)   NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`            timestamp(6)   NULL,
+        \`created_by\`            varchar(36)    NULL,
+        \`updated_by\`            varchar(36)    NULL,
+        \`deleted_by\`            varchar(36)    NULL,
+        \`status\`                varchar(50)    NOT NULL DEFAULT 'active',
+        \`is_active\`             tinyint        NOT NULL DEFAULT 1,
+        \`remarks\`               text           NULL,
+        \`order_number\`          varchar(50)    NOT NULL,
+        \`branch_id\`             varchar(36)    NOT NULL,
+        \`customer_id\`           varchar(36)    NULL,
+        \`table_id\`              varchar(36)    NULL,
+        \`order_type\`            enum('dine_in','take_away','delivery') NOT NULL DEFAULT 'dine_in',
+        \`order_status\`          enum('pending','confirmed','preparing','ready','served','completed','cancelled') NOT NULL DEFAULT 'pending',
+        \`payment_status\`        enum('pending','partial','paid','refunded') NOT NULL DEFAULT 'pending',
+        \`subtotal\`              decimal(10,2)  NOT NULL DEFAULT 0,
+        \`discount_amount\`       decimal(10,2)  NOT NULL DEFAULT 0,
+        \`discount_percentage\`   decimal(5,2)   NOT NULL DEFAULT 0,
+        \`discount_type\`         enum('percentage','fixed') NULL,
+        \`discount_reason\`       varchar(255)   NULL,
+        \`coupon_code\`           varchar(100)   NULL,
+        \`tax_amount\`            decimal(10,2)  NOT NULL DEFAULT 0,
+        \`tax_percentage\`        decimal(5,2)   NOT NULL DEFAULT 0,
+        \`service_charge\`        decimal(10,2)  NOT NULL DEFAULT 0,
+        \`delivery_charge\`       decimal(10,2)  NOT NULL DEFAULT 0,
+        \`tips\`                  decimal(10,2)  NOT NULL DEFAULT 0,
+        \`rounding_amount\`       decimal(10,2)  NOT NULL DEFAULT 0,
+        \`grand_total\`           decimal(10,2)  NOT NULL DEFAULT 0,
+        \`paid_amount\`           decimal(10,2)  NOT NULL DEFAULT 0,
+        \`due_amount\`            decimal(10,2)  NOT NULL DEFAULT 0,
+        \`number_of_guests\`      int            NOT NULL DEFAULT 1,
+        \`special_instructions\`  text           NULL,
+        \`cancellation_reason\`   text           NULL,
+        \`waiter_id\`             varchar(36)    NULL,
+        \`cashier_id\`            varchar(36)    NULL,
+        \`ordered_at\`            timestamp      NULL,
+        \`confirmed_at\`          timestamp      NULL,
+        \`completed_at\`          timestamp      NULL,
+        \`cancelled_at\`          timestamp      NULL,
+        \`cashier_confirmed_at\`  timestamp      NULL,
+        \`is_locked\`             tinyint        NOT NULL DEFAULT 0,
+        UNIQUE INDEX \`UQ_order_number\` (\`order_number\`),
+        INDEX \`IDX_order_branch\` (\`branch_id\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`order_items\` (
+        \`id\`                   varchar(36)   NOT NULL,
+        \`created_at\`           timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`           timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`           timestamp(6)  NULL,
+        \`created_by\`           varchar(36)   NULL,
+        \`updated_by\`           varchar(36)   NULL,
+        \`deleted_by\`           varchar(36)   NULL,
+        \`status\`               varchar(50)   NOT NULL DEFAULT 'active',
+        \`is_active\`            tinyint       NOT NULL DEFAULT 1,
+        \`remarks\`              text          NULL,
+        \`order_id\`             varchar(36)   NOT NULL,
+        \`menu_item_id\`         varchar(36)   NOT NULL,
+        \`item_name\`            varchar(255)  NOT NULL,
+        \`price\`                decimal(10,2) NOT NULL,
+        \`quantity\`             int           NOT NULL DEFAULT 1,
+        \`discount_amount\`      decimal(10,2) NOT NULL DEFAULT 0,
+        \`tax_amount\`           decimal(10,2) NOT NULL DEFAULT 0,
+        \`total\`                decimal(10,2) NOT NULL DEFAULT 0,
+        \`variants\`             json          NULL,
+        \`add_ons\`              json          NULL,
+        \`modifiers\`            json          NULL,
+        \`special_instructions\` text          NULL,
+        \`kot_id\`               varchar(36)   NULL,
+        INDEX \`IDX_oi_order\` (\`order_id\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`kots\` (
+        \`id\`                   varchar(36)  NOT NULL,
+        \`created_at\`           timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`           timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`           timestamp(6) NULL,
+        \`created_by\`           varchar(36)  NULL,
+        \`updated_by\`           varchar(36)  NULL,
+        \`deleted_by\`           varchar(36)  NULL,
+        \`status\`               varchar(50)  NOT NULL DEFAULT 'active',
+        \`is_active\`            tinyint      NOT NULL DEFAULT 1,
+        \`remarks\`              text         NULL,
+        \`kot_number\`           varchar(50)  NOT NULL,
+        \`order_id\`             varchar(36)  NOT NULL,
+        \`kitchen_id\`           varchar(36)  NOT NULL,
+        \`kot_status\`           enum('pending','in_progress','ready','served','cancelled') NOT NULL DEFAULT 'pending',
+        \`priority\`             enum('normal','high','urgent') NOT NULL DEFAULT 'normal',
+        \`items\`                json         NOT NULL,
+        \`chef_id\`              varchar(36)  NULL,
+        \`waiter_id\`            varchar(36)  NULL,
+        \`special_instructions\` text         NULL,
+        \`started_at\`           timestamp    NULL,
+        \`ready_at\`             timestamp    NULL,
+        \`served_at\`            timestamp    NULL,
+        \`cancelled_at\`         timestamp    NULL,
+        \`preparation_time\`     int          NULL,
+        \`elapsed_time\`         int          NULL,
+        \`is_merged\`            tinyint      NOT NULL DEFAULT 0,
+        \`merged_with_kot_id\`   varchar(36)  NULL,
+        \`print_count\`          int          NOT NULL DEFAULT 0,
+        \`cancellation_reason\`  text         NULL,
+        UNIQUE INDEX \`IDX_4aa4293123692fb7c45166c668\` (\`kot_number\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`payments\` (
+        \`id\`               varchar(36)   NOT NULL,
+        \`created_at\`       timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`       timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`       timestamp(6)  NULL,
+        \`created_by\`       varchar(36)   NULL,
+        \`updated_by\`       varchar(36)   NULL,
+        \`deleted_by\`       varchar(36)   NULL,
+        \`status\`           varchar(50)   NOT NULL DEFAULT 'active',
+        \`is_active\`        tinyint       NOT NULL DEFAULT 1,
+        \`remarks\`          text          NULL,
+        \`payment_number\`   varchar(50)   NOT NULL,
+        \`order_id\`         varchar(36)   NOT NULL,
+        \`payment_method\`   enum('cash','card','upi','wallet','credit','bank_transfer') NOT NULL,
+        \`payment_gateway\`  enum('razorpay','paytm','phonepe','gpay','stripe','manual') NOT NULL DEFAULT 'manual',
+        \`amount\`           decimal(10,2) NOT NULL,
+        \`transaction_id\`   varchar(255)  NULL,
+        \`reference_number\` varchar(255)  NULL,
+        \`payment_status\`   varchar(50)   NOT NULL DEFAULT 'success',
+        \`payment_date\`     timestamp     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        \`notes\`            text          NULL,
+        \`processed_by\`     varchar(36)   NULL,
+        \`payment_mode\`     enum('cash','online','card') NOT NULL DEFAULT 'cash',
+        \`is_split_payment\` tinyint       NOT NULL DEFAULT 0,
+        \`payment_sequence\` int           NOT NULL DEFAULT 1,
+        UNIQUE INDEX \`IDX_37f40df34aab6084881c0ceebd\` (\`payment_number\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`invoices\` (
+        \`id\`               varchar(36)   NOT NULL,
+        \`created_at\`       timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`       timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`       timestamp(6)  NULL,
+        \`created_by\`       varchar(36)   NULL,
+        \`updated_by\`       varchar(36)   NULL,
+        \`deleted_by\`       varchar(36)   NULL,
+        \`status\`           varchar(50)   NOT NULL DEFAULT 'active',
+        \`is_active\`        tinyint       NOT NULL DEFAULT 1,
+        \`remarks\`          text          NULL,
+        \`invoice_number\`   varchar(50)   NOT NULL,
+        \`invoice_type\`     enum('invoice','credit_note','debit_note') NOT NULL DEFAULT 'invoice',
+        \`order_id\`         varchar(36)   NOT NULL,
+        \`customer_id\`      varchar(36)   NULL,
+        \`branch_id\`        varchar(36)   NOT NULL,
+        \`invoice_date\`     date          NOT NULL,
+        \`subtotal\`         decimal(10,2) NOT NULL,
+        \`discount_amount\`  decimal(10,2) NOT NULL DEFAULT 0,
+        \`cgst_amount\`      decimal(10,2) NOT NULL DEFAULT 0,
+        \`cgst_percentage\`  decimal(5,2)  NOT NULL DEFAULT 0,
+        \`sgst_amount\`      decimal(10,2) NOT NULL DEFAULT 0,
+        \`sgst_percentage\`  decimal(5,2)  NOT NULL DEFAULT 0,
+        \`igst_amount\`      decimal(10,2) NOT NULL DEFAULT 0,
+        \`igst_percentage\`  decimal(5,2)  NOT NULL DEFAULT 0,
+        \`service_charge\`   decimal(10,2) NOT NULL DEFAULT 0,
+        \`rounding_amount\`  decimal(10,2) NOT NULL DEFAULT 0,
+        \`grand_total\`      decimal(10,2) NOT NULL,
+        \`notes\`            text          NULL,
+        \`pdf_path\`         varchar(255)  NULL,
+        \`qr_code\`          text          NULL,
+        \`generated_by\`     varchar(36)   NULL,
+        \`print_count\`      int           NOT NULL DEFAULT 0,
+        \`is_duplicate\`     tinyint       NOT NULL DEFAULT 0,
+        UNIQUE INDEX \`IDX_d8f8d3788694e1b3f96c42c36f\` (\`invoice_number\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    /* ------------------------------------------------------------------ */
+    /* RESERVATIONS / CUSTOMERS                                             */
+    /* ------------------------------------------------------------------ */
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`reservations\` (
+        \`id\`                  varchar(36)  NOT NULL,
+        \`created_at\`          timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`          timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`          timestamp(6) NULL,
+        \`created_by\`          varchar(36)  NULL,
+        \`updated_by\`          varchar(36)  NULL,
+        \`deleted_by\`          varchar(36)  NULL,
+        \`status\`              varchar(50)  NOT NULL DEFAULT 'active',
+        \`is_active\`           tinyint      NOT NULL DEFAULT 1,
+        \`remarks\`             text         NULL,
+        \`reservation_number\`  varchar(50)  NOT NULL,
+        \`branch_id\`           varchar(36)  NOT NULL,
+        \`customer_id\`         varchar(36)  NULL,
+        \`customer_name\`       varchar(255) NOT NULL,
+        \`customer_phone\`      varchar(20)  NOT NULL,
+        \`customer_email\`      varchar(255) NULL,
+        \`reservation_date\`    date         NOT NULL,
+        \`reservation_time\`    time         NOT NULL,
+        \`party_size\`          int          NOT NULL DEFAULT 2,
+        \`table_id\`            varchar(36)  NULL,
+        \`reservation_status\`  enum('pending','confirmed','cancelled','completed','no_show') NOT NULL DEFAULT 'pending',
+        \`special_requests\`    text         NULL,
+        \`confirmed_at\`        timestamp    NULL,
+        \`cancelled_at\`        timestamp    NULL,
+        \`checked_in_at\`       timestamp    NULL,
+        \`cancellation_reason\` text         NULL,
+        UNIQUE INDEX \`UQ_res_number\` (\`reservation_number\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    /* ------------------------------------------------------------------ */
+    /* INVENTORY / VENDORS / PURCHASE ORDERS                               */
+    /* ------------------------------------------------------------------ */
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`vendors\` (
+        \`id\`                  varchar(36)   NOT NULL,
+        \`created_at\`          timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`          timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`          timestamp(6)  NULL,
+        \`created_by\`          varchar(36)   NULL,
+        \`updated_by\`          varchar(36)   NULL,
+        \`deleted_by\`          varchar(36)   NULL,
+        \`status\`              varchar(50)   NOT NULL DEFAULT 'active',
+        \`is_active\`           tinyint       NOT NULL DEFAULT 1,
+        \`remarks\`             text          NULL,
+        \`name\`                varchar(255)  NOT NULL,
+        \`code\`                varchar(100)  NOT NULL,
+        \`company_name\`        varchar(255)  NULL,
+        \`contact_person\`      varchar(100)  NULL,
+        \`email\`               varchar(255)  NULL,
+        \`phone\`               varchar(20)   NOT NULL,
+        \`alternate_phone\`     varchar(20)   NULL,
+        \`address\`             text          NULL,
+        \`city\`                varchar(100)  NULL,
+        \`state\`               varchar(100)  NULL,
+        \`country\`             varchar(100)  NULL,
+        \`pincode\`             varchar(20)   NULL,
+        \`gst_number\`          varchar(50)   NULL,
+        \`pan_number\`          varchar(50)   NULL,
+        \`bank_name\`           varchar(100)  NULL,
+        \`bank_account_number\` varchar(50)   NULL,
+        \`bank_ifsc_code\`      varchar(50)   NULL,
+        \`payment_term\`        enum('cash','credit','net_7','net_15','net_30','net_60') NOT NULL DEFAULT 'cash',
+        \`credit_limit\`        decimal(10,2) NOT NULL DEFAULT 0,
+        \`opening_balance\`     decimal(10,2) NOT NULL DEFAULT 0,
+        \`current_balance\`     decimal(10,2) NOT NULL DEFAULT 0,
+        \`total_purchases\`     decimal(10,2) NOT NULL DEFAULT 0,
+        \`total_payments\`      decimal(10,2) NOT NULL DEFAULT 0,
+        \`rating\`              int           NULL DEFAULT 5,
+        \`documents\`           json          NULL,
+        \`notes\`               text          NULL,
+        UNIQUE INDEX \`UQ_vendor_code\` (\`code\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`raw_materials\` (
+        \`id\`               varchar(36)   NOT NULL,
+        \`created_at\`       timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`       timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`       timestamp(6)  NULL,
+        \`created_by\`       varchar(36)   NULL,
+        \`updated_by\`       varchar(36)   NULL,
+        \`deleted_by\`       varchar(36)   NULL,
+        \`status\`           varchar(50)   NOT NULL DEFAULT 'active',
+        \`is_active\`        tinyint       NOT NULL DEFAULT 1,
+        \`remarks\`          text          NULL,
+        \`name\`             varchar(255)  NOT NULL,
+        \`code\`             varchar(100)  NOT NULL,
+        \`description\`      text          NULL,
+        \`material_type\`    enum('raw_material','finished_goods','consumable') NOT NULL DEFAULT 'raw_material',
+        \`category_id\`      varchar(36)   NULL,
+        \`unit\`             enum('kg','gram','liter','ml','piece','dozen','packet','box') NOT NULL DEFAULT 'kg',
+        \`cost_per_unit\`    decimal(10,2) NOT NULL DEFAULT 0,
+        \`current_stock\`    decimal(10,2) NOT NULL DEFAULT 0,
+        \`minimum_stock\`    decimal(10,2) NOT NULL DEFAULT 0,
+        \`reorder_level\`    decimal(10,2) NOT NULL DEFAULT 0,
+        \`maximum_stock\`    decimal(10,2) NOT NULL DEFAULT 0,
+        \`preferred_vendor_id\` varchar(36) NULL,
+        \`lead_time_days\`   int           NULL,
+        \`shelf_life_days\`  int           NULL,
+        \`storage_location\` varchar(100)  NULL,
+        \`is_perishable\`    tinyint       NOT NULL DEFAULT 0,
+        \`track_batch\`      tinyint       NOT NULL DEFAULT 0,
+        \`track_expiry\`     tinyint       NOT NULL DEFAULT 0,
+        \`image\`            varchar(255)  NULL,
+        \`hsn_code\`         varchar(50)   NULL,
+        \`gst_percentage\`   decimal(5,2)  NOT NULL DEFAULT 0,
+        UNIQUE INDEX \`UQ_rm_code\` (\`code\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`purchase_orders\` (
+        \`id\`                    varchar(36)   NOT NULL,
+        \`created_at\`            timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`            timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`            timestamp(6)  NULL,
+        \`created_by\`            varchar(36)   NULL,
+        \`updated_by\`            varchar(36)   NULL,
+        \`deleted_by\`            varchar(36)   NULL,
+        \`status\`                varchar(50)   NOT NULL DEFAULT 'active',
+        \`is_active\`             tinyint       NOT NULL DEFAULT 1,
+        \`remarks\`               text          NULL,
+        \`po_number\`             varchar(50)   NOT NULL,
+        \`vendor_id\`             varchar(36)   NOT NULL,
+        \`branch_id\`             varchar(36)   NOT NULL,
+        \`order_date\`            date          NOT NULL,
+        \`expected_delivery_date\` date         NULL,
+        \`po_status\`             enum('draft','pending_approval','approved','rejected','ordered','partially_received','received','cancelled') NOT NULL DEFAULT 'draft',
+        \`payment_term\`          enum('cash','credit','net_7','net_15','net_30','net_60') NOT NULL DEFAULT 'net_30',
+        \`subtotal\`              decimal(10,2) NOT NULL DEFAULT 0,
+        \`tax_percentage\`        decimal(5,2)  NOT NULL DEFAULT 0,
+        \`tax_amount\`            decimal(10,2) NOT NULL DEFAULT 0,
+        \`discount_amount\`       decimal(10,2) NOT NULL DEFAULT 0,
+        \`shipping_cost\`         decimal(10,2) NOT NULL DEFAULT 0,
+        \`total_amount\`          decimal(10,2) NOT NULL DEFAULT 0,
+        \`approved_by\`           varchar(36)   NULL,
+        \`approved_at\`           timestamp     NULL,
+        \`rejection_reason\`      text          NULL,
+        \`notes\`                 text          NULL,
+        \`delivery_address\`      varchar(255)  NULL,
+        UNIQUE INDEX \`UQ_po_number\` (\`po_number\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`purchase_order_items\` (
+        \`id\`               varchar(36)   NOT NULL,
+        \`created_at\`       timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`       timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`       timestamp(6)  NULL,
+        \`created_by\`       varchar(36)   NULL,
+        \`updated_by\`       varchar(36)   NULL,
+        \`deleted_by\`       varchar(36)   NULL,
+        \`status\`           varchar(50)   NOT NULL DEFAULT 'active',
+        \`is_active\`        tinyint       NOT NULL DEFAULT 1,
+        \`remarks\`          text          NULL,
+        \`purchase_order_id\` varchar(36)  NOT NULL,
+        \`raw_material_id\`  varchar(36)   NOT NULL,
+        \`quantity\`         decimal(10,3) NOT NULL,
+        \`unit\`             varchar(50)   NOT NULL DEFAULT 'kg',
+        \`unit_price\`       decimal(10,2) NOT NULL,
+        \`total_price\`      decimal(10,2) NOT NULL,
+        \`received_quantity\` decimal(10,3) NOT NULL DEFAULT 0,
+        \`notes\`            text          NULL,
+        INDEX \`IDX_poi_po\` (\`purchase_order_id\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    /* ------------------------------------------------------------------ */
+    /* RECIPES / EMPLOYEES / EXPENSES / AUDIT / SETTINGS                   */
+    /* ------------------------------------------------------------------ */
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`recipes\` (
+        \`id\`                 varchar(36)   NOT NULL,
+        \`created_at\`         timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`         timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`         timestamp(6)  NULL,
+        \`created_by\`         varchar(36)   NULL,
+        \`updated_by\`         varchar(36)   NULL,
+        \`deleted_by\`         varchar(36)   NULL,
+        \`status\`             varchar(50)   NOT NULL DEFAULT 'active',
+        \`is_active\`          tinyint       NOT NULL DEFAULT 1,
+        \`remarks\`            text          NULL,
+        \`name\`               varchar(255)  NOT NULL,
+        \`code\`               varchar(100)  NOT NULL,
+        \`description\`        text          NULL,
+        \`menu_item_id\`       varchar(36)   NOT NULL,
+        \`preparation_time\`   int           NULL,
+        \`cooking_time\`       int           NULL,
+        \`serving_size\`       int           NOT NULL DEFAULT 1,
+        \`preparation_steps\`  text          NULL,
+        \`total_cost\`         decimal(10,2) NOT NULL DEFAULT 0,
+        \`cost_per_serving\`   decimal(10,2) NOT NULL DEFAULT 0,
+        \`version\`            int           NOT NULL DEFAULT 1,
+        UNIQUE INDEX \`UQ_recipe_code\` (\`code\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`recipe_ingredients\` (
+        \`id\`              varchar(36)   NOT NULL,
+        \`created_at\`      timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`      timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`      timestamp(6)  NULL,
+        \`created_by\`      varchar(36)   NULL,
+        \`updated_by\`      varchar(36)   NULL,
+        \`deleted_by\`      varchar(36)   NULL,
+        \`status\`          varchar(50)   NOT NULL DEFAULT 'active',
+        \`is_active\`       tinyint       NOT NULL DEFAULT 1,
+        \`remarks\`         text          NULL,
+        \`recipe_id\`       varchar(36)   NOT NULL,
+        \`raw_material_id\` varchar(36)   NOT NULL,
+        \`quantity\`        decimal(10,2) NOT NULL,
+        \`unit\`            varchar(50)   NOT NULL DEFAULT 'kg',
+        \`cost\`            decimal(10,2) NOT NULL DEFAULT 0,
+        \`sort_order\`      int           NOT NULL DEFAULT 0,
+        \`preparation_notes\` text        NULL,
+        INDEX \`IDX_ri_recipe\` (\`recipe_id\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`employees\` (
+        \`id\`                         varchar(36)   NOT NULL,
+        \`created_at\`                 timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`                 timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`                 timestamp(6)  NULL,
+        \`created_by\`                 varchar(36)   NULL,
+        \`updated_by\`                 varchar(36)   NULL,
+        \`deleted_by\`                 varchar(36)   NULL,
+        \`status\`                     varchar(50)   NOT NULL DEFAULT 'active',
+        \`is_active\`                  tinyint       NOT NULL DEFAULT 1,
+        \`remarks\`                    text          NULL,
+        \`employee_code\`              varchar(50)   NOT NULL,
+        \`user_id\`                    varchar(36)   NULL,
+        \`first_name\`                 varchar(100)  NOT NULL,
+        \`last_name\`                  varchar(100)  NOT NULL,
+        \`email\`                      varchar(255)  NULL,
+        \`phone\`                      varchar(20)   NOT NULL,
+        \`date_of_birth\`              date          NOT NULL,
+        \`gender\`                     enum('male','female','other') NOT NULL,
+        \`address\`                    text          NULL,
+        \`city\`                       varchar(100)  NULL,
+        \`state\`                      varchar(100)  NULL,
+        \`pincode\`                    varchar(20)   NULL,
+        \`branch_id\`                  varchar(36)   NOT NULL,
+        \`designation\`                varchar(100)  NOT NULL,
+        \`department\`                 varchar(100)  NOT NULL,
+        \`employment_type\`            enum('full_time','part_time','contract','temporary') NOT NULL DEFAULT 'full_time',
+        \`joining_date\`               date          NOT NULL,
+        \`confirmation_date\`          date          NULL,
+        \`resignation_date\`           date          NULL,
+        \`relieving_date\`             date          NULL,
+        \`basic_salary\`               decimal(10,2) NOT NULL,
+        \`gross_salary\`               decimal(10,2) NOT NULL DEFAULT 0,
+        \`pan_number\`                 varchar(50)   NULL,
+        \`aadhar_number\`              varchar(50)   NULL,
+        \`uan_number\`                 varchar(50)   NULL,
+        \`esi_number\`                 varchar(50)   NULL,
+        \`bank_name\`                  varchar(100)  NULL,
+        \`bank_account_number\`        varchar(50)   NULL,
+        \`bank_ifsc_code\`             varchar(50)   NULL,
+        \`photo\`                      varchar(255)  NULL,
+        \`documents\`                  json          NULL,
+        \`emergency_contact_name\`     varchar(20)   NULL,
+        \`emergency_contact_phone\`    varchar(20)   NULL,
+        \`emergency_contact_relation\` varchar(100)  NULL,
+        \`notes\`                      text          NULL,
+        UNIQUE INDEX \`IDX_56162b5f24af743a154680684f\` (\`employee_code\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`attendances\` (
+        \`id\`                varchar(36)   NOT NULL,
+        \`created_at\`        timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`        timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`        timestamp(6)  NULL,
+        \`created_by\`        varchar(36)   NULL,
+        \`updated_by\`        varchar(36)   NULL,
+        \`deleted_by\`        varchar(36)   NULL,
+        \`status\`            varchar(50)   NOT NULL DEFAULT 'active',
+        \`is_active\`         tinyint       NOT NULL DEFAULT 1,
+        \`remarks\`           text          NULL,
+        \`employee_id\`       varchar(36)   NOT NULL,
+        \`attendance_date\`   date          NOT NULL,
+        \`attendance_status\` enum('present','absent','half_day','leave','holiday','week_off') NOT NULL DEFAULT 'present',
+        \`check_in_time\`     time          NULL,
+        \`check_out_time\`    time          NULL,
+        \`total_hours\`       decimal(5,2)  NOT NULL DEFAULT 0,
+        \`overtime_hours\`    decimal(5,2)  NOT NULL DEFAULT 0,
+        \`notes\`             text          NULL,
+        \`approved_by\`       varchar(36)   NULL,
+        \`approved_at\`       timestamp     NULL,
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`expenses\` (
+        \`id\`                  varchar(36)   NOT NULL,
+        \`created_at\`          timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`          timestamp(6)  NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`          timestamp(6)  NULL,
+        \`created_by\`          varchar(36)   NULL,
+        \`updated_by\`          varchar(36)   NULL,
+        \`deleted_by\`          varchar(36)   NULL,
+        \`status\`              varchar(50)   NOT NULL DEFAULT 'active',
+        \`is_active\`           tinyint       NOT NULL DEFAULT 1,
+        \`remarks\`             text          NULL,
+        \`expense_number\`      varchar(50)   NOT NULL,
+        \`branch_id\`           varchar(36)   NOT NULL,
+        \`category\`            enum('electricity','gas','rent','maintenance','marketing','petty_cash','salary','transportation','office_supplies','miscellaneous') NOT NULL,
+        \`title\`               varchar(255)  NOT NULL,
+        \`description\`         text          NULL,
+        \`amount\`              decimal(10,2) NOT NULL,
+        \`expense_date\`        date          NOT NULL,
+        \`expense_status\`      enum('pending','approved','rejected','paid') NOT NULL DEFAULT 'pending',
+        \`vendor_name\`         varchar(255)  NULL,
+        \`bill_number\`         varchar(255)  NULL,
+        \`attachment\`          varchar(255)  NULL,
+        \`approved_by\`         varchar(36)   NULL,
+        \`approved_at\`         timestamp     NULL,
+        \`rejection_reason\`    text          NULL,
+        \`is_recurring\`        tinyint       NOT NULL DEFAULT 0,
+        \`recurring_frequency\` varchar(50)   NULL,
+        UNIQUE INDEX \`IDX_c104942da407cb31c7e6b5b40a\` (\`expense_number\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`audit_logs\` (
+        \`id\`          varchar(36)  NOT NULL,
+        \`created_at\`  timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`  timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`  timestamp(6) NULL,
+        \`created_by\`  varchar(36)  NULL,
+        \`updated_by\`  varchar(36)  NULL,
+        \`deleted_by\`  varchar(36)  NULL,
+        \`status\`      varchar(50)  NOT NULL DEFAULT 'active',
+        \`is_active\`   tinyint      NOT NULL DEFAULT 1,
+        \`remarks\`     text         NULL,
+        \`user_id\`     varchar(36)  NULL,
+        \`action\`      enum('create','update','delete','login','logout','payment','permission_change') NOT NULL,
+        \`entity_type\` varchar(100) NOT NULL,
+        \`entity_id\`   varchar(36)  NULL,
+        \`old_values\`  json         NULL,
+        \`new_values\`  json         NULL,
+        \`ip_address\`  varchar(50)  NULL,
+        \`user_agent\`  text         NULL,
+        \`description\` text         NULL,
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+
+    await queryRunner.query(`
+      CREATE TABLE IF NOT EXISTS \`settings\` (
+        \`id\`            varchar(36)  NOT NULL,
+        \`created_at\`    timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
+        \`updated_at\`    timestamp(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
+        \`deleted_at\`    timestamp(6) NULL,
+        \`created_by\`    varchar(36)  NULL,
+        \`updated_by\`    varchar(36)  NULL,
+        \`deleted_by\`    varchar(36)  NULL,
+        \`status\`        varchar(50)  NOT NULL DEFAULT 'active',
+        \`is_active\`     tinyint      NOT NULL DEFAULT 1,
+        \`remarks\`       text         NULL,
+        \`setting_key\`   varchar(100) NOT NULL,
+        \`setting_value\` text         NOT NULL,
+        \`data_type\`     enum('STRING','NUMBER','BOOLEAN','JSON','DATE') NOT NULL DEFAULT 'STRING',
+        \`category\`      enum('GENERAL','BUSINESS','POS','PAYMENT','TAX','NOTIFICATION','SECURITY','INTEGRATION') NOT NULL DEFAULT 'GENERAL',
+        \`description\`   varchar(255) NULL,
+        \`is_public\`     tinyint      NOT NULL DEFAULT 0,
+        \`is_editable\`   tinyint      NOT NULL DEFAULT 1,
+        \`branch_id\`     varchar(255) NULL,
+        UNIQUE INDEX \`UQ_setting_key\` (\`setting_key\`),
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+  }
+
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    // Drop in reverse dependency order
+    const tables = [
+      'settings', 'audit_logs', 'expenses', 'attendances', 'employees',
+      'recipe_ingredients', 'recipes', 'purchase_order_items', 'purchase_orders',
+      'raw_materials', 'vendors', 'reservations', 'invoices', 'payments',
+      'kots', 'order_items', 'orders', 'customers',
+      'menu_item_kitchens', 'menu_items', 'categories',
+      'tables', 'kitchens', 'branches', 'restaurants',
+      'user_permissions', 'users', 'role_permissions', 'roles',
+      'permissions', 'permission_groups',
+    ];
+    for (const t of tables) {
+      await queryRunner.query(`DROP TABLE IF EXISTS \`${t}\``);
     }
-
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(`DROP TABLE \`query-result-cache\``);
-        await queryRunner.query(`ALTER TABLE \`menu_item_kitchens\` DROP FOREIGN KEY \`FK_417409ed989390da9f90513579f\``);
-        await queryRunner.query(`ALTER TABLE \`menu_item_kitchens\` DROP FOREIGN KEY \`FK_e4ee78a1bde86e4a05e76cc5c08\``);
-        await queryRunner.query(`ALTER TABLE \`role_permissions\` DROP FOREIGN KEY \`FK_17022daf3f885f7d35423e9971e\``);
-        await queryRunner.query(`ALTER TABLE \`role_permissions\` DROP FOREIGN KEY \`FK_178199805b901ccd220ab7740ec\``);
-        await queryRunner.query(`ALTER TABLE \`attendances\` DROP FOREIGN KEY \`FK_43dca8b4751d7449a38b583991c\``);
-        await queryRunner.query(`ALTER TABLE \`audit_logs\` DROP FOREIGN KEY \`FK_bd2726fd31b35443f2245b93ba0\``);
-        await queryRunner.query(`ALTER TABLE \`employees\` DROP FOREIGN KEY \`FK_457a39c666de2686596e502eb8c\``);
-        await queryRunner.query(`ALTER TABLE \`employees\` DROP FOREIGN KEY \`FK_2d83c53c3e553a48dadb9722e38\``);
-        await queryRunner.query(`ALTER TABLE \`expenses\` DROP FOREIGN KEY \`FK_866a3b82ff438efc19c2398cda6\``);
-        await queryRunner.query(`ALTER TABLE \`invoices\` DROP FOREIGN KEY \`FK_f8b468df52fb45053ad0c4ca38b\``);
-        await queryRunner.query(`ALTER TABLE \`invoices\` DROP FOREIGN KEY \`FK_65e3145f317bd655481d3f96c74\``);
-        await queryRunner.query(`ALTER TABLE \`invoices\` DROP FOREIGN KEY \`FK_ea83c3b911906a3578de2340fdf\``);
-        await queryRunner.query(`ALTER TABLE \`kots\` DROP FOREIGN KEY \`FK_1cde65d4bae384023e32d272680\``);
-        await queryRunner.query(`ALTER TABLE \`kots\` DROP FOREIGN KEY \`FK_858a587cc6a59c4e231aade86fd\``);
-        await queryRunner.query(`ALTER TABLE \`payments\` DROP FOREIGN KEY \`FK_b2f7b823a21562eeca20e72b006\``);
-        await queryRunner.query(`ALTER TABLE \`orders\` DROP FOREIGN KEY \`FK_3d36410e89a795172fa6e0dd968\``);
-        await queryRunner.query(`ALTER TABLE \`orders\` DROP FOREIGN KEY \`FK_772d0ce0473ac2ccfa26060dbe9\``);
-        await queryRunner.query(`ALTER TABLE \`orders\` DROP FOREIGN KEY \`FK_17b723da2c12837f4bc21e33398\``);
-        await queryRunner.query(`ALTER TABLE \`order_items\` DROP FOREIGN KEY \`FK_e462517174f561ece2916701c0a\``);
-        await queryRunner.query(`ALTER TABLE \`order_items\` DROP FOREIGN KEY \`FK_145532db85752b29c57d2b7b1f1\``);
-        await queryRunner.query(`ALTER TABLE \`recipe_ingredients\` DROP FOREIGN KEY \`FK_ef3305db4381f14d368ba1a4ca1\``);
-        await queryRunner.query(`ALTER TABLE \`recipe_ingredients\` DROP FOREIGN KEY \`FK_f240137e0e13bed80bdf64fed53\``);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` DROP FOREIGN KEY \`FK_0fc5e24afd3831fe1046c7b1ba0\``);
-        await queryRunner.query(`ALTER TABLE \`recipes\` DROP FOREIGN KEY \`FK_ba90e79c045f10f0bcc6fbcd5cb\``);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` DROP FOREIGN KEY \`FK_20cff56c44dd4fe52d5aa2b96f8\``);
-        await queryRunner.query(`ALTER TABLE \`categories\` DROP FOREIGN KEY \`FK_de08738901be6b34d2824a1e243\``);
-        await queryRunner.query(`ALTER TABLE \`reservations\` DROP FOREIGN KEY \`FK_5027ce24b4bc5e090302b2f7754\``);
-        await queryRunner.query(`ALTER TABLE \`reservations\` DROP FOREIGN KEY \`FK_f63cb79a34cdf2d47ab23f31a8b\``);
-        await queryRunner.query(`ALTER TABLE \`reservations\` DROP FOREIGN KEY \`FK_30266aeb26fc1c25d3ea098b138\``);
-        await queryRunner.query(`ALTER TABLE \`tables\` DROP FOREIGN KEY \`FK_283e6bfdd38a7cc7fec643f72b6\``);
-        await queryRunner.query(`ALTER TABLE \`branches\` DROP FOREIGN KEY \`FK_1e384921d7d292c1705bff1a220\``);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` DROP FOREIGN KEY \`FK_6838bd799a8ec12f81d0a657e70\``);
-        await queryRunner.query(`ALTER TABLE \`user_permissions\` DROP FOREIGN KEY \`FK_8145f5fadacd311693c15e41f10\``);
-        await queryRunner.query(`ALTER TABLE \`user_permissions\` DROP FOREIGN KEY \`FK_3495bd31f1862d02931e8e8d2e8\``);
-        await queryRunner.query(`ALTER TABLE \`users\` DROP FOREIGN KEY \`FK_a2cecd1a3531c0b041e29ba46e1\``);
-        await queryRunner.query(`ALTER TABLE \`permissions\` DROP FOREIGN KEY \`FK_8f6f729862e4d1ab66c2f39cd08\``);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`cancelled_at\` \`cancelled_at\` timestamp NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`completed_at\` \`completed_at\` timestamp NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`confirmed_at\` \`confirmed_at\` timestamp NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`ordered_at\` \`ordered_at\` timestamp NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`cashier_id\` \`cashier_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`waiter_id\` \`waiter_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`cancellation_reason\` \`cancellation_reason\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`special_instructions\` \`special_instructions\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`coupon_code\` \`coupon_code\` varchar(100) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`table_id\` \`table_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`customer_id\` \`customer_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`remarks\` \`remarks\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`orders\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` CHANGE \`kot_id\` \`kot_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` CHANGE \`special_instructions\` \`special_instructions\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` DROP COLUMN \`modifiers\``);
-        await queryRunner.query(`ALTER TABLE \`order_items\` ADD \`modifiers\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` DROP COLUMN \`add_ons\``);
-        await queryRunner.query(`ALTER TABLE \`order_items\` ADD \`add_ons\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` DROP COLUMN \`variants\``);
-        await queryRunner.query(`ALTER TABLE \`order_items\` ADD \`variants\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` CHANGE \`remarks\` \`remarks\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`order_items\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`recipe_ingredients\` CHANGE \`preparation_notes\` \`preparation_notes\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`recipe_ingredients\` CHANGE \`remarks\` \`remarks\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`recipe_ingredients\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`recipe_ingredients\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`recipe_ingredients\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`recipe_ingredients\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`hsn_code\` \`hsn_code\` varchar(50) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`image\` \`image\` varchar(255) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`storage_location\` \`storage_location\` varchar(100) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`shelf_life_days\` \`shelf_life_days\` int NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`lead_time_days\` \`lead_time_days\` int NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`preferred_vendor_id\` \`preferred_vendor_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`category_id\` \`category_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`description\` \`description\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`remarks\` \`remarks\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`raw_materials\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`recipes\` CHANGE \`preparation_steps\` \`preparation_steps\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`recipes\` CHANGE \`cooking_time\` \`cooking_time\` int NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`recipes\` CHANGE \`preparation_time\` \`preparation_time\` int NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`recipes\` CHANGE \`description\` \`description\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`recipes\` CHANGE \`remarks\` \`remarks\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`recipes\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`recipes\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`recipes\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`recipes\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`printer_id\` \`printer_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`seasonal_price\` \`seasonal_price\` decimal(10,2) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`seasonal_price_end\` \`seasonal_price_end\` date NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`seasonal_price_start\` \`seasonal_price_start\` date NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` DROP COLUMN \`dynamic_pricing\``);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` ADD \`dynamic_pricing\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` DROP COLUMN \`modifiers\``);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` ADD \`modifiers\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` DROP COLUMN \`add_ons\``);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` ADD \`add_ons\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` DROP COLUMN \`variants\``);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` ADD \`variants\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` DROP COLUMN \`combo_items\``);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` ADD \`combo_items\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` DROP COLUMN \`allergens\``);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` ADD \`allergens\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` DROP COLUMN \`nutritional_values\``);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` ADD \`nutritional_values\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`qr_code\` \`qr_code\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`barcode\` \`barcode\` varchar(255) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` DROP COLUMN \`gallery\``);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` ADD \`gallery\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`image\` \`image\` varchar(255) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`preparation_time\` \`preparation_time\` int NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`cost_price\` \`cost_price\` decimal(10,2) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`description\` \`description\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`remarks\` \`remarks\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`menu_items\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`categories\` CHANGE \`parent_category_id\` \`parent_category_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`categories\` CHANGE \`image\` \`image\` varchar(255) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`categories\` CHANGE \`description\` \`description\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`categories\` CHANGE \`remarks\` \`remarks\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`categories\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`categories\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`categories\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`categories\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`cancellation_reason\` \`cancellation_reason\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`checked_in_at\` \`checked_in_at\` timestamp NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`cancelled_at\` \`cancelled_at\` timestamp NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`confirmed_at\` \`confirmed_at\` timestamp NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`special_requests\` \`special_requests\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`table_id\` \`table_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`customer_email\` \`customer_email\` varchar(255) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`customer_id\` \`customer_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`remarks\` \`remarks\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`reservations\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`gst_number\` \`gst_number\` varchar(50) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`notes\` \`notes\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`customers\` DROP COLUMN \`favorite_items\``);
-        await queryRunner.query(`ALTER TABLE \`customers\` ADD \`favorite_items\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`last_visit_date\` \`last_visit_date\` timestamp NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`membership_tier\` \`membership_tier\` enum ('silver', 'gold', 'platinum') NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`anniversary_date\` \`anniversary_date\` date NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`date_of_birth\` \`date_of_birth\` date NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`pincode\` \`pincode\` varchar(20) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`state\` \`state\` varchar(100) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`city\` \`city\` varchar(100) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`address\` \`address\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`email\` \`email\` varchar(255) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`remarks\` \`remarks\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`customers\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`merged_with_table_id\` \`merged_with_table_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`current_order_id\` \`current_order_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`height\` \`height\` decimal(5,2) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`width\` \`width\` decimal(5,2) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`position_y\` \`position_y\` decimal(10,2) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`position_x\` \`position_x\` decimal(10,2) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`dining_area\` \`dining_area\` varchar(100) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`remarks\` \`remarks\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`tables\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`branches\` DROP COLUMN \`tax_configuration\``);
-        await queryRunner.query(`ALTER TABLE \`branches\` ADD \`tax_configuration\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`branches\` DROP COLUMN \`business_hours\``);
-        await queryRunner.query(`ALTER TABLE \`branches\` ADD \`business_hours\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`manager_id\` \`manager_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`parent_branch_id\` \`parent_branch_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`longitude\` \`longitude\` decimal(10,6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`latitude\` \`latitude\` decimal(10,6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`gst_number\` \`gst_number\` varchar(50) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`email\` \`email\` varchar(255) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`description\` \`description\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`remarks\` \`remarks\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`branches\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`printer_port\` \`printer_port\` int NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`printer_ip\` \`printer_ip\` varchar(255) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`manager_id\` \`manager_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`location\` \`location\` varchar(100) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`description\` \`description\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`remarks\` \`remarks\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`kitchens\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`fssai_license\` \`fssai_license\` varchar(100) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`pan_number\` \`pan_number\` varchar(50) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`gst_number\` \`gst_number\` varchar(50) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`website\` \`website\` varchar(255) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`email\` \`email\` varchar(255) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`logo\` \`logo\` varchar(255) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`description\` \`description\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`remarks\` \`remarks\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`restaurants\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`user_permissions\` CHANGE \`remarks\` \`remarks\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`user_permissions\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`user_permissions\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`user_permissions\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`user_permissions\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`branch_id\` \`branch_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`role_id\` \`role_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`otp_expiry\` \`otp_expiry\` timestamp NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`otp\` \`otp\` varchar(10) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`reset_token_expiry\` \`reset_token_expiry\` timestamp NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`reset_token\` \`reset_token\` varchar(255) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`locked_until\` \`locked_until\` timestamp NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`last_login_device\` \`last_login_device\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`last_login_ip\` \`last_login_ip\` varchar(50) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`last_login_at\` \`last_login_at\` timestamp NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`avatar\` \`avatar\` varchar(255) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`phone\` \`phone\` varchar(20) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`remarks\` \`remarks\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`users\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`roles\` CHANGE \`parent_role_id\` \`parent_role_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`roles\` CHANGE \`description\` \`description\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`roles\` CHANGE \`remarks\` \`remarks\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`roles\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`roles\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`roles\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`roles\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`permissions\` CHANGE \`permission_group_id\` \`permission_group_id\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`permissions\` CHANGE \`action\` \`action\` varchar(50) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`permissions\` CHANGE \`resource\` \`resource\` varchar(255) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`permissions\` CHANGE \`description\` \`description\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`permissions\` CHANGE \`remarks\` \`remarks\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`permissions\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`permissions\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`permissions\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`permissions\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`permission_groups\` CHANGE \`description\` \`description\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`permission_groups\` CHANGE \`remarks\` \`remarks\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`permission_groups\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`permission_groups\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`permission_groups\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`permission_groups\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`notes\` \`notes\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` DROP COLUMN \`documents\``);
-        await queryRunner.query(`ALTER TABLE \`vendors\` ADD \`documents\` longtext COLLATE "utf8mb4_bin" NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`bank_ifsc_code\` \`bank_ifsc_code\` varchar(50) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`bank_account_number\` \`bank_account_number\` varchar(50) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`bank_name\` \`bank_name\` varchar(100) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`pan_number\` \`pan_number\` varchar(50) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`gst_number\` \`gst_number\` varchar(50) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`pincode\` \`pincode\` varchar(20) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`country\` \`country\` varchar(100) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`state\` \`state\` varchar(100) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`city\` \`city\` varchar(100) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`address\` \`address\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`alternate_phone\` \`alternate_phone\` varchar(20) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`email\` \`email\` varchar(255) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`contact_person\` \`contact_person\` varchar(100) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`company_name\` \`company_name\` varchar(255) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`remarks\` \`remarks\` text NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`deleted_by\` \`deleted_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`updated_by\` \`updated_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`created_by\` \`created_by\` varchar(36) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`ALTER TABLE \`vendors\` CHANGE \`deleted_at\` \`deleted_at\` timestamp(6) NULL DEFAULT 'NULL'`);
-        await queryRunner.query(`DROP INDEX \`IDX_417409ed989390da9f90513579\` ON \`menu_item_kitchens\``);
-        await queryRunner.query(`DROP INDEX \`IDX_e4ee78a1bde86e4a05e76cc5c0\` ON \`menu_item_kitchens\``);
-        await queryRunner.query(`DROP TABLE \`menu_item_kitchens\``);
-        await queryRunner.query(`DROP INDEX \`IDX_17022daf3f885f7d35423e9971\` ON \`role_permissions\``);
-        await queryRunner.query(`DROP INDEX \`IDX_178199805b901ccd220ab7740e\` ON \`role_permissions\``);
-        await queryRunner.query(`DROP TABLE \`role_permissions\``);
-        await queryRunner.query(`DROP TABLE \`attendances\``);
-        await queryRunner.query(`DROP TABLE \`audit_logs\``);
-        await queryRunner.query(`DROP INDEX \`IDX_56162b5f24af743a154680684f\` ON \`employees\``);
-        await queryRunner.query(`DROP TABLE \`employees\``);
-        await queryRunner.query(`DROP INDEX \`IDX_c104942da407cb31c7e6b5b40a\` ON \`expenses\``);
-        await queryRunner.query(`DROP TABLE \`expenses\``);
-        await queryRunner.query(`DROP INDEX \`IDX_d8f8d3788694e1b3f96c42c36f\` ON \`invoices\``);
-        await queryRunner.query(`DROP TABLE \`invoices\``);
-        await queryRunner.query(`DROP INDEX \`IDX_4aa4293123692fb7c45166c668\` ON \`kots\``);
-        await queryRunner.query(`DROP TABLE \`kots\``);
-        await queryRunner.query(`DROP INDEX \`IDX_37f40df34aab6084881c0ceebd\` ON \`payments\``);
-        await queryRunner.query(`DROP TABLE \`payments\``);
-    }
-
+  }
 }

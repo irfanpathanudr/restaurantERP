@@ -1,11 +1,15 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { API_CONFIG } from '@/config/api';
 import toast from 'react-hot-toast';
+import { store } from '@/store';
+import { logout } from '@/store/slices/authSlice';
+import { clearAuthStorage, getAccessToken, isTokenExpired } from '@/utils/session';
 
 class ApiService {
   private api: AxiosInstance;
   private isRefreshing = false;
   private refreshSubscribers: ((token: string) => void)[] = [];
+  private sessionExpired = false;
 
   constructor() {
     this.api = axios.create({
@@ -21,8 +25,16 @@ class ApiService {
     // Request interceptor
     this.api.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem('accessToken');
+        if (this.sessionExpired) {
+          return Promise.reject(new axios.Cancel('Session expired'));
+        }
+
+        const token = getAccessToken();
         if (token) {
+          if (isTokenExpired(token)) {
+            this.handleSessionExpired();
+            return Promise.reject(new axios.Cancel('Session expired'));
+          }
           config.headers.Authorization = `Bearer ${token}`;
         }
         return config;
@@ -79,18 +91,21 @@ class ApiService {
 
               return this.api(originalRequest);
             } catch (refreshError) {
-              // Clear auth data and redirect to login
-              localStorage.removeItem('accessToken');
-              localStorage.removeItem('refreshToken');
-              localStorage.removeItem('user');
-              window.location.href = '/login';
+              this.handleSessionExpired();
               return Promise.reject(refreshError);
             } finally {
               this.isRefreshing = false;
             }
           }
 
-          // For login failures and retried requests: reject silently, let the caller handle the message
+          if (originalRequest._retry) {
+            this.handleSessionExpired();
+          }
+
+          return Promise.reject(error);
+        }
+
+        if (axios.isCancel(error)) {
           return Promise.reject(error);
         }
 
@@ -101,7 +116,25 @@ class ApiService {
     );
   }
 
+  private handleSessionExpired(): void {
+    if (this.sessionExpired) return;
+    this.sessionExpired = true;
+
+    clearAuthStorage();
+    store.dispatch(logout());
+
+    if (!window.location.pathname.includes('/login')) {
+      toast.error('Your session has expired. Please log in again.');
+      window.location.href = '/login';
+    }
+  }
+
+  public resetSessionState(): void {
+    this.sessionExpired = false;
+  }
+
   private handleError(error: AxiosError): void {
+    if (this.sessionExpired || axios.isCancel(error)) return;
     if (error.response) {
       const message = (error.response.data as any)?.message || 'An error occurred';
       toast.error(message);

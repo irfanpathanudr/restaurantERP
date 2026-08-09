@@ -1,6 +1,6 @@
-import { MigrationInterface, QueryRunner, Table, TableForeignKey } from 'typeorm';
+import { MigrationInterface, QueryRunner, Table } from 'typeorm';
 
-export class CreatePrintersTable1723190000000 implements MigrationInterface {
+export class CreatePrintersTable1784000000001 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.createTable(
       new Table({
@@ -197,27 +197,23 @@ export class CreatePrintersTable1723190000000 implements MigrationInterface {
       true
     );
 
-    // Add foreign key for branch
-    await queryRunner.createForeignKey(
-      'printers',
-      new TableForeignKey({
-        columnNames: ['branch_id'],
-        referencedColumnNames: ['id'],
-        referencedTableName: 'branches',
-        onDelete: 'CASCADE',
-      })
+    // Fix collation to match branches.id (utf8mb4_unicode_ci) before adding FK
+    await queryRunner.query(
+      `ALTER TABLE \`printers\` CONVERT TO CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`
     );
 
+    // Add foreign key for branch
+    await queryRunner.query(`
+      ALTER TABLE \`printers\`
+        ADD CONSTRAINT \`FK_02cc428abf632fcbc73f098292f\`
+        FOREIGN KEY (\`branch_id\`) REFERENCES \`branches\`(\`id\`)
+        ON DELETE CASCADE ON UPDATE NO ACTION
+    `);
+
     // Create indexes
-    await queryRunner.query(
-      `CREATE INDEX idx_printers_branch_id ON printers(branch_id)`
-    );
-    await queryRunner.query(
-      `CREATE INDEX idx_printers_printer_type ON printers(printer_type)`
-    );
-    await queryRunner.query(
-      `CREATE INDEX idx_printers_is_default ON printers(is_default)`
-    );
+    await queryRunner.query(`CREATE INDEX idx_printers_branch_id ON printers(branch_id)`);
+    await queryRunner.query(`CREATE INDEX idx_printers_printer_type ON printers(printer_type)`);
+    await queryRunner.query(`CREATE INDEX idx_printers_is_default ON printers(is_default)`);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {

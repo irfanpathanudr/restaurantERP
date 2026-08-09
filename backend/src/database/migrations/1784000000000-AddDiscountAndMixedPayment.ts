@@ -1,89 +1,57 @@
-import { MigrationInterface, QueryRunner, TableColumn } from 'typeorm';
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
+/**
+ * These columns are now included directly in the InitialSchema migration.
+ * This migration is kept as a no-op so the migrations table stays consistent
+ * when upgrading from an older schema version.
+ */
 export class AddDiscountAndMixedPayment1784000000000 implements MigrationInterface {
   public async up(queryRunner: QueryRunner): Promise<void> {
-    // Add discount type to orders table
-    await queryRunner.addColumn(
-      'orders',
-      new TableColumn({
-        name: 'discount_type',
-        type: 'enum',
-        enum: ['percentage', 'fixed'],
-        default: "'fixed'",
-        isNullable: true,
-      })
+    // Add discount_type to orders if not already present
+    const ordersColumns = await queryRunner.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'orders' AND COLUMN_NAME = 'discount_type'`
     );
+    if (ordersColumns.length === 0) {
+      await queryRunner.query(
+        `ALTER TABLE \`orders\` ADD \`discount_type\` enum('percentage','fixed') NULL DEFAULT 'fixed'`
+      );
+      await queryRunner.query(
+        `ALTER TABLE \`orders\` ADD \`discount_reason\` varchar(255) NULL`
+      );
+      await queryRunner.query(
+        `ALTER TABLE \`orders\` ADD \`cashier_confirmed_at\` timestamp NULL`
+      );
+      await queryRunner.query(
+        `ALTER TABLE \`orders\` ADD \`is_locked\` tinyint NOT NULL DEFAULT 0`
+      );
+    }
 
-    // Add discount reason/notes
-    await queryRunner.addColumn(
-      'orders',
-      new TableColumn({
-        name: 'discount_reason',
-        type: 'varchar',
-        length: '255',
-        isNullable: true,
-      })
+    // Add payment_mode to payments if not already present
+    const paymentsColumns = await queryRunner.query(
+      `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+       WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'payments' AND COLUMN_NAME = 'payment_mode'`
     );
-
-    // Add cashier confirmation timestamp
-    await queryRunner.addColumn(
-      'orders',
-      new TableColumn({
-        name: 'cashier_confirmed_at',
-        type: 'timestamp',
-        isNullable: true,
-      })
-    );
-
-    // Add locked status - prevents editing after cashier confirms
-    await queryRunner.addColumn(
-      'orders',
-      new TableColumn({
-        name: 'is_locked',
-        type: 'boolean',
-        default: false,
-      })
-    );
-
-    // Modify payments table to support split payments
-    await queryRunner.addColumn(
-      'payments',
-      new TableColumn({
-        name: 'payment_mode',
-        type: 'enum',
-        enum: ['cash', 'online', 'card'],
-        default: "'cash'",
-      })
-    );
-
-    // Add split payment indicator
-    await queryRunner.addColumn(
-      'payments',
-      new TableColumn({
-        name: 'is_split_payment',
-        type: 'boolean',
-        default: false,
-      })
-    );
-
-    // Add payment sequence for split payments
-    await queryRunner.addColumn(
-      'payments',
-      new TableColumn({
-        name: 'payment_sequence',
-        type: 'int',
-        default: 1,
-      })
-    );
+    if (paymentsColumns.length === 0) {
+      await queryRunner.query(
+        `ALTER TABLE \`payments\` ADD \`payment_mode\` enum('cash','online','card') NOT NULL DEFAULT 'cash'`
+      );
+      await queryRunner.query(
+        `ALTER TABLE \`payments\` ADD \`is_split_payment\` tinyint NOT NULL DEFAULT 0`
+      );
+      await queryRunner.query(
+        `ALTER TABLE \`payments\` ADD \`payment_sequence\` int NOT NULL DEFAULT 1`
+      );
+    }
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropColumn('orders', 'discount_type');
-    await queryRunner.dropColumn('orders', 'discount_reason');
-    await queryRunner.dropColumn('orders', 'cashier_confirmed_at');
-    await queryRunner.dropColumn('orders', 'is_locked');
-    await queryRunner.dropColumn('payments', 'payment_mode');
-    await queryRunner.dropColumn('payments', 'is_split_payment');
-    await queryRunner.dropColumn('payments', 'payment_sequence');
+    await queryRunner.query(`ALTER TABLE \`orders\` DROP COLUMN IF EXISTS \`discount_type\``);
+    await queryRunner.query(`ALTER TABLE \`orders\` DROP COLUMN IF EXISTS \`discount_reason\``);
+    await queryRunner.query(`ALTER TABLE \`orders\` DROP COLUMN IF EXISTS \`cashier_confirmed_at\``);
+    await queryRunner.query(`ALTER TABLE \`orders\` DROP COLUMN IF EXISTS \`is_locked\``);
+    await queryRunner.query(`ALTER TABLE \`payments\` DROP COLUMN IF EXISTS \`payment_mode\``);
+    await queryRunner.query(`ALTER TABLE \`payments\` DROP COLUMN IF EXISTS \`is_split_payment\``);
+    await queryRunner.query(`ALTER TABLE \`payments\` DROP COLUMN IF EXISTS \`payment_sequence\``);
   }
 }

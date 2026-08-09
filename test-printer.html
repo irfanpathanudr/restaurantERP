@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KOT Printer Test Page</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 5px;
+        }
+        .test-section h2 {
+            color: #555;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .success {
+            background: #d4edda;
+            border: 1px solid #28a745;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #dc3545;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        .info {
+            background: #d1ecf1;
+            border: 1px solid #17a2b8;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        #status {
+            margin-top: 20px;
+        }
+        input {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+            margin: 5px;
+        }
+        label {
+            display: inline-block;
+            width: 150px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🖨️ KOT Printer Test Page</h1>
+        
+        <div class="info">
+            <strong>Purpose:</strong> Test your printer connectivity before using the ERP system.
+        </div>
+
+        <!-- Browser Compatibility Check -->
+        <div class="test-section">
+            <h2>1. Browser Compatibility Check</h2>
+            <div id="browserCheck"></div>
+        </div>
+
+        <!-- Bluetooth Printer Test -->
+        <div class="test-section">
+            <h2>2. Test Bluetooth Printer (Chrome Only)</h2>
+            <div class="warning">
+                <strong>Requirements:</strong>
+                <ul>
+                    <li>Chrome browser (Desktop or Android)</li>
+                    <li>Bluetooth printer paired with your device</li>
+                    <li>HTTPS connection (or localhost)</li>
+                </ul>
+            </div>
+            <button id="connectBluetooth" onclick="connectBluetoothPrinter()">Connect Bluetooth Printer</button>
+            <button id="printTestBluetooth" onclick="printBluetoothTest()" disabled>Print Test Page (Bluetooth)</button>
+            <div id="bluetoothStatus"></div>
+        </div>
+
+        <!-- Browser Print Dialog Test -->
+        <div class="test-section">
+            <h2>3. Test Browser Print Dialog</h2>
+            <div class="info">
+                Works with any system printer (USB, Network, etc.)
+            </div>
+            <button onclick="printBrowserTest()">Print Test Page (Browser)</button>
+        </div>
+
+        <!-- Network Printer Test -->
+        <div class="test-section">
+            <h2>4. Test Network Printer (Server-Side)</h2>
+            <div class="warning">
+                <strong>Note:</strong> This requires server-side printing to be implemented.
+                See NETWORK_PRINTER_SETUP.md for instructions.
+            </div>
+            <div>
+                <label>Server URL:</label>
+                <input type="text" id="serverUrl" value="http://localhost:5000" placeholder="http://localhost:5000">
+            </div>
+            <div>
+                <label>Printer ID:</label>
+                <input type="text" id="printerId" placeholder="Enter printer ID">
+            </div>
+            <button onclick="testNetworkPrinter()">Test Network Printer</button>
+            <div id="networkStatus"></div>
+        </div>
+
+        <div id="status"></div>
+    </div>
+
+    <script>
+        // Check browser compatibility
+        window.onload = function() {
+            const browserCheck = document.getElementById('browserCheck');
+            const isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+            const hasBluetoothAPI = 'bluetooth' in navigator;
+            
+            let html = '<ul>';
+            html += `<li>Browser: ${navigator.userAgent.includes('Chrome') ? '✅' : '❌'} ${isChrome ? 'Chrome' : 'Other'}</li>`;
+            html += `<li>Bluetooth API: ${hasBluetoothAPI ? '✅ Available' : '❌ Not Available'}</li>`;
+            html += `<li>HTTPS: ${location.protocol === 'https:' || location.hostname === 'localhost' ? '✅' : '❌'}</li>`;
+            html += '</ul>';
+            
+            if (!hasBluetoothAPI) {
+                html += '<div class="error">⚠️ Web Bluetooth not supported. Use Chrome browser for Bluetooth printing.</div>';
+            }
+            
+            browserCheck.innerHTML = html;
+        };
+
+        let bluetoothDevice = null;
+        let bluetoothCharacteristic = null;
+
+        // Bluetooth printer connection
+        async function connectBluetoothPrinter() {
+            const statusDiv = document.getElementById('bluetoothStatus');
+            const connectBtn = document.getElementById('connectBluetooth');
+            const printBtn = document.getElementById('printTestBluetooth');
+            
+            try {
+                statusDiv.innerHTML = '<div class="info">📡 Requesting Bluetooth device...</div>';
+                
+                bluetoothDevice = await navigator.bluetooth.requestDevice({
+                    acceptAllDevices: true,
+                    optionalServices: [
+                        '000018f0-0000-1000-8000-00805f9b34fb',
+                        '00001101-0000-1000-8000-00805f9b34fb',
+                        'e7810a71-73ae-499d-8c15-faa9aef0c3f2'
+                    ]
+                });
+                
+                statusDiv.innerHTML = '<div class="info">🔗 Connecting to ' + bluetoothDevice.name + '...</div>';
+                
+                const server = await bluetoothDevice.gatt.connect();
+                
+                // Try to find writable characteristic
+                const services = await server.getPrimaryServices();
+                let found = false;
+                
+                for (const service of services) {
+                    const characteristics = await service.getCharacteristics();
+                    for (const char of characteristics) {
+                        if (char.properties.write || char.properties.writeWithoutResponse) {
+                            bluetoothCharacteristic = char;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found) break;
+                }
+                
+                if (!bluetoothCharacteristic) {
+                    throw new Error('No writable characteristic found');
+                }
+                
+                statusDiv.innerHTML = '<div class="success">✅ Connected to ' + bluetoothDevice.name + '!</div>';
+                printBtn.disabled = false;
+                connectBtn.textContent = 'Reconnect Bluetooth Printer';
+                
+            } catch (error) {
+                statusDiv.innerHTML = '<div class="error">❌ Connection failed: ' + error.message + '</div>';
+                console.error('Bluetooth error:', error);
+            }
+        }
+
+        // Print test page via Bluetooth
+        async function printBluetoothTest() {
+            const statusDiv = document.getElementById('bluetoothStatus');
+            
+            if (!bluetoothCharacteristic) {
+                alert('Please connect to printer first');
+                return;
+            }
+            
+            try {
+                statusDiv.innerHTML = '<div class="info">🖨️ Printing test page...</div>';
+                
+                // ESC/POS commands for test print
+                const ESC = 0x1b;
+                const GS = 0x1d;
+                const LF = 0x0a;
+                
+                const commands = new Uint8Array([
+                    ESC, 0x40, // Initialize
+                    ESC, 0x61, 0x01, // Center
+                    ESC, 0x45, 0x01, // Bold on
+                    ESC, 0x21, 0x30, // Double size
+                    ...new TextEncoder().encode('TEST PRINT\n'),
+                    ESC, 0x21, 0x00, // Normal size
+                    ESC, 0x45, 0x00, // Bold off
+                    ESC, 0x61, 0x00, // Left align
+                    LF,
+                    ...new TextEncoder().encode('Printer is working!\n'),
+                    ...new TextEncoder().encode('Time: ' + new Date().toLocaleString() + '\n'),
+                    ...new TextEncoder().encode('Device: ' + (bluetoothDevice?.name || 'Unknown') + '\n'),
+                    LF, LF, LF,
+                    GS, 0x56, 0x01 // Cut paper
+                ]);
+                
+                // Send in chunks
+                const CHUNK_SIZE = 512;
+                for (let i = 0; i < commands.length; i += CHUNK_SIZE) {
+                    const chunk = commands.slice(i, i + CHUNK_SIZE);
+                    await bluetoothCharacteristic.writeValueWithoutResponse(chunk);
+                    await new Promise(r => setTimeout(r, 50));
+                }
+                
+                statusDiv.innerHTML = '<div class="success">✅ Test page sent! Check your printer.</div>';
+                
+            } catch (error) {
+                statusDiv.innerHTML = '<div class="error">❌ Print failed: ' + error.message + '</div>';
+                console.error('Print error:', error);
+            }
+        }
+
+        // Browser print dialog test
+        function printBrowserTest() {
+            const win = window.open('', '_blank', 'width=320,height=600');
+            if (!win) {
+                alert('Please allow popups for this site');
+                return;
+            }
+            
+            win.document.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta charset="utf-8">
+                    <title>Printer Test</title>
+                    <style>
+                        body { font-family: 'Courier New', monospace; padding: 20px; font-size: 14px; }
+                        h1 { font-size: 18px; text-align: center; }
+                        .divider { border-top: 1px dashed #000; margin: 10px 0; }
+                    </style>
+                </head>
+                <body>
+                    <h1>PRINTER TEST</h1>
+                    <div class="divider"></div>
+                    <p><strong>Status:</strong> OK</p>
+                    <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+                    <p><strong>Browser:</strong> ${navigator.userAgent.includes('Chrome') ? 'Chrome' : 'Other'}</p>
+                    <div class="divider"></div>
+                    <p>If you can see this page in the print dialog, your printer setup is working!</p>
+                    <div class="divider"></div>
+                    <script>
+                        window.onload = function() {
+                            window.print();
+                            setTimeout(() => window.close(), 500);
+                        };
+                    </script>
+                </body>
+                </html>
+            `);
+            win.document.close();
+        }
+
+        // Test network printer (server-side)
+        async function testNetworkPrinter() {
+            const serverUrl = document.getElementById('serverUrl').value;
+            const printerId = document.getElementById('printerId').value;
+            const statusDiv = document.getElementById('networkStatus');
+            
+            if (!printerId) {
+                statusDiv.innerHTML = '<div class="error">❌ Please enter a printer ID</div>';
+                return;
+            }
+            
+            try {
+                statusDiv.innerHTML = '<div class="info">🔄 Testing network printer...</div>';
+                
+                const response = await fetch(`${serverUrl}/api/v1/printers/${printerId}/test`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    statusDiv.innerHTML = '<div class="success">✅ ' + data.message + '</div>';
+                } else {
+                    statusDiv.innerHTML = '<div class="error">❌ ' + data.message + '</div>';
+                }
+                
+            } catch (error) {
+                statusDiv.innerHTML = '<div class="error">❌ Test failed: ' + error.message + '<br><small>Make sure the server is running and the endpoint is implemented.</small></div>';
+                console.error('Network printer error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
