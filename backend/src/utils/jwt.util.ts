@@ -13,8 +13,8 @@ export class JWTUtil {
   private static accessTokenSecret = process.env.JWT_SECRET || 'your-super-secret-jwt-key';
   private static refreshTokenSecret =
     process.env.JWT_REFRESH_SECRET || 'your-super-secret-refresh-key';
-  private static accessTokenExpiration = process.env.JWT_EXPIRATION || '15m';
-  private static refreshTokenExpiration = process.env.JWT_REFRESH_EXPIRATION || '7d';
+  private static accessTokenExpiration = process.env.JWT_EXPIRES_IN || '1d';
+  private static refreshTokenExpiration = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
 
   static generateAccessToken(user: User): string {
     const payload: JWTPayload = {
