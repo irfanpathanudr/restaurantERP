@@ -31,26 +31,15 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
+import { MenuItem as MenuItemType, MenuItemVariant } from '@/types/entities.types';
 
-interface MenuItem {
-  id: string;
-  name: string;
-  sku?: string;
-  description?: string;
-  price: number | string;
-  image?: string;
-  image_url?: string;
-  is_available: boolean;
-  preparation_time?: number;
-  is_vegetarian?: boolean;
-  is_vegan?: boolean;
-  category?: { id: string; name: string };
-}
+type MenuItem = MenuItemType;
 
 interface CartItem {
   menu_item: MenuItem;
   quantity: number;
   special_instructions?: string;
+  selected_variant?: MenuItemVariant | null;
 }
 
 interface TableOption {
@@ -75,6 +64,7 @@ interface OrderItemRow {
   total: number | string;
   special_instructions?: string | null;
   menu_item?: MenuItem;
+  variants?: { selected?: string } | null;
 }
 
 interface OrderRow {
@@ -189,6 +179,8 @@ const OrdersPage: React.FC = () => {
   const [orderNotes, setOrderNotes] = useState('');
   const [kitchens, setKitchens] = useState<{ id: string; name: string }[]>([]);
   const [selectedKitchen, setSelectedKitchen] = useState('');
+  const [showVariantModal, setShowVariantModal] = useState(false);
+  const [variantModalItem, setVariantModalItem] = useState<MenuItem | null>(null);
 
   const categories = [
     { id: 'all', name: 'All Items' },
@@ -266,7 +258,10 @@ const OrdersPage: React.FC = () => {
         apiService.get('/branches'),
         apiService.get('/kitchens').catch(() => ({ data: { data: [] } })),
       ]);
-      setMenuItems(menuRes.data.data || []);
+      const menuData = menuRes.data.data || [];
+      console.log('Loaded menu items:', menuData.length);
+      console.log('Sample menu item with variants:', menuData.find((item: MenuItem) => item.variants && item.variants.length > 0));
+      setMenuItems(menuData);
       setTables(tablesRes.data.data || []);
       const branchList = branchesRes.data.data || [];
       setBranches(branchList);
@@ -329,24 +324,61 @@ const OrdersPage: React.FC = () => {
     }
   };
 
-  const addToCart = (menuItem: MenuItem) => {
-    const existing = cart.find((c) => c.menu_item.id === menuItem.id);
+  const addToCart = (menuItem: MenuItem, selectedVariant?: MenuItemVariant | null) => {
+    // Check if item has variants and no variant was selected
+    if (menuItem.variants && Array.isArray(menuItem.variants) && menuItem.variants.length > 0 && !selectedVariant) {
+      // Show variant selection modal
+      console.log('Opening variant modal for:', menuItem.name, 'variants:', menuItem.variants);
+      setVariantModalItem(menuItem);
+      setShowVariantModal(true);
+      return;
+    }
+
+    console.log('Adding to cart:', menuItem.name, 'variant:', selectedVariant?.name);
+
+    // Create unique key for cart item (includes variant if present)
+    const cartKey = selectedVariant 
+      ? `${menuItem.id}-${selectedVariant.name}` 
+      : menuItem.id;
+    
+    const existing = cart.find((c) => {
+      const existingKey = c.selected_variant 
+        ? `${c.menu_item.id}-${c.selected_variant.name}` 
+        : c.menu_item.id;
+      return existingKey === cartKey;
+    });
+
     if (existing) {
       setCart(
-        cart.map((c) =>
-          c.menu_item.id === menuItem.id ? { ...c, quantity: c.quantity + 1 } : c
-        )
+        cart.map((c) => {
+          const existingKey = c.selected_variant 
+            ? `${c.menu_item.id}-${c.selected_variant.name}` 
+            : c.menu_item.id;
+          return existingKey === cartKey ? { ...c, quantity: c.quantity + 1 } : c;
+        })
       );
     } else {
-      setCart([...cart, { menu_item: menuItem, quantity: 1 }]);
+      setCart([...cart, { 
+        menu_item: menuItem, 
+        quantity: 1, 
+        selected_variant: selectedVariant || null 
+      }]);
     }
   };
 
-  const updateQuantity = (menuItemId: string, delta: number) => {
+  const handleVariantSelect = (variant: MenuItemVariant) => {
+    if (variantModalItem) {
+      addToCart(variantModalItem, variant);
+      setShowVariantModal(false);
+      setVariantModalItem(null);
+    }
+  };
+
+  const updateQuantity = (cartIndex: number, delta: number) => {
     setCart(
       cart
-        .map((item) => {
-          if (item.menu_item.id !== menuItemId) return item;
+        .map((item, idx) => {
+          if (idx !== cartIndex) return item;
           return { ...item, quantity: item.quantity + delta };
         })
         .filter((item) => item.quantity > 0)
@@ -354,7 +386,12 @@ const OrdersPage: React.FC = () => {
   };
 
   const cartTotal = cart.reduce(
-    (sum, item) => sum + Number(item.menu_item.price || 0) * item.quantity,
+    (sum, item) => {
+      const price = item.selected_variant 
+        ? Number(item.selected_variant.price || 0) 
+        : Number(item.menu_item.price || 0);
+      return sum + price * item.quantity;
+    },
     0
   );
 
@@ -384,8 +421,11 @@ const OrdersPage: React.FC = () => {
         items: cart.map((item) => ({
           menuItemId: item.menu_item.id,
           quantity: item.quantity,
-          unitPrice: Number(item.menu_item.price || 0),
+          unitPrice: item.selected_variant 
+            ? Number(item.selected_variant.price || 0) 
+            : Number(item.menu_item.price || 0),
           specialInstructions: item.special_instructions,
+          variantName: item.selected_variant?.name,
         })),
       });
       toast.success('Order created successfully');
@@ -807,9 +847,16 @@ const OrdersPage: React.FC = () => {
                     className="flex items-center justify-between gap-3 rounded-lg border border-gray-200 dark:border-gray-700 p-3"
                   >
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium text-gray-900 dark:text-gray-100 truncate">
-                        {item.item_name || item.menu_item?.name}
-                      </p>
+                      <div className="flex items-center gap-2 mb-1">
+                        <p className="font-medium text-gray-900 dark:text-gray-100 truncate">
+                          {item.item_name || item.menu_item?.name}
+                        </p>
+                        {item.variants && item.variants.selected && (
+                          <span className="inline-block px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded shrink-0">
+                            {item.variants.selected}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400">
                         {money(item.price)} × {item.quantity}
                         {item.special_instructions ? ` · ${item.special_instructions}` : ''}
@@ -1078,42 +1125,54 @@ const OrdersPage: React.FC = () => {
                   <p className="text-sm">Cart is empty</p>
                 </div>
               ) : (
-                cart.map((item) => (
-                  <div
-                    key={item.menu_item.id}
-                    className="bg-white dark:bg-gray-800 rounded-lg p-3 space-y-2"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <h4 className="font-medium text-sm">{item.menu_item.name}</h4>
-                        <p className="text-xs text-gray-500">{money(item.menu_item.price)} each</p>
-                      </div>
-                      <button onClick={() => updateQuantity(item.menu_item.id, -item.quantity)}>
-                        <X className="h-4 w-4 text-red-500" />
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => updateQuantity(item.menu_item.id, -1)}
-                          className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center"
-                        >
-                          <Minus className="h-3 w-3" />
-                        </button>
-                        <span className="w-8 text-center font-medium">{item.quantity}</span>
-                        <button
-                          onClick={() => updateQuantity(item.menu_item.id, 1)}
-                          className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center"
-                        >
-                          <Plus className="h-3 w-3" />
+                cart.map((item, idx) => {
+                  const displayPrice = item.selected_variant 
+                    ? Number(item.selected_variant.price || 0) 
+                    : Number(item.menu_item.price || 0);
+                  const itemTotal = displayPrice * item.quantity;
+                  
+                  return (
+                    <div
+                      key={`${item.menu_item.id}-${item.selected_variant?.name || 'default'}-${idx}`}
+                      className="bg-white dark:bg-gray-800 rounded-lg p-3 space-y-2"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h4 className="font-medium text-sm">{item.menu_item.name}</h4>
+                          {item.selected_variant && (
+                            <span className="inline-block mt-0.5 px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded">
+                              {item.selected_variant.name}
+                            </span>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">{money(displayPrice)} each</p>
+                        </div>
+                        <button onClick={() => updateQuantity(idx, -item.quantity)}>
+                          <X className="h-4 w-4 text-red-500" />
                         </button>
                       </div>
-                      <span className="font-semibold">
-                        {money(Number(item.menu_item.price || 0) * item.quantity)}
-                      </span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => updateQuantity(idx, -1)}
+                            className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center"
+                          >
+                            <Minus className="h-3 w-3" />
+                          </button>
+                          <span className="w-8 text-center font-medium">{item.quantity}</span>
+                          <button
+                            onClick={() => updateQuantity(idx, 1)}
+                            className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center"
+                          >
+                            <Plus className="h-3 w-3" />
+                          </button>
+                        </div>
+                        <span className="font-semibold">
+                          {money(itemTotal)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
 
@@ -1149,6 +1208,58 @@ const OrdersPage: React.FC = () => {
               </div>
             </div>
           </div>
+        </div>
+      </Modal>
+
+      {/* Variant Selection Modal */}
+      <Modal
+        isOpen={showVariantModal}
+        onClose={() => {
+          setShowVariantModal(false);
+          setVariantModalItem(null);
+        }}
+        title={`Select Size - ${variantModalItem?.name || ''}`}
+      >
+        <div className="space-y-4 p-4">
+          {variantModalItem?.variants && variantModalItem.variants.length > 0 ? (
+            <div className="grid grid-cols-1 gap-3">
+              {variantModalItem.variants.map((variant: MenuItemVariant) => (
+                <button
+                  key={variant.name}
+                  onClick={() => handleVariantSelect(variant)}
+                  className="bg-white dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 hover:border-blue-500 dark:hover:border-blue-400 rounded-lg p-4 text-left transition-colors"
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-lg text-gray-900 dark:text-gray-100">
+                        {variant.name}
+                      </h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {variant.portion_size === 'small' && 'Small Portion'}
+                        {variant.portion_size === 'medium' && 'Medium Portion'}
+                        {variant.portion_size === 'large' && 'Large Portion'}
+                      </p>
+                    </div>
+                    <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                      {money(variant.price)}
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-gray-500">No variants available</p>
+          )}
+          <Button
+            variant="ghost"
+            onClick={() => {
+              setShowVariantModal(false);
+              setVariantModalItem(null);
+            }}
+            className="w-full"
+          >
+            Cancel
+          </Button>
         </div>
       </Modal>
     </div>

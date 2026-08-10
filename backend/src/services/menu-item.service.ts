@@ -29,6 +29,17 @@ export class MenuItemService {
 
   async create(data: CreateMenuItemDto): Promise<MenuItem> {
     try {
+      // Convert is_vegetarian/is_vegan to food_type if not provided
+      if (!data.food_type) {
+        if (data.is_vegan) {
+          data.food_type = 'veg' as any; // Vegan is a subset of veg
+        } else if (data.is_vegetarian) {
+          data.food_type = 'veg' as any;
+        } else {
+          data.food_type = 'non_veg' as any;
+        }
+      }
+
       const menuItem = this.menuItemRepository.create(data);
       await this.menuItemRepository.save(menuItem);
       logger.info(`Menu item created: ${menuItem.id}`);

@@ -214,6 +214,12 @@ export interface Category extends BaseEntity {
   is_active: boolean;
 }
 
+export interface MenuItemVariant {
+  name: string;
+  price: number;
+  portion_size: 'small' | 'medium' | 'large';
+}
+
 export interface MenuItem extends BaseEntity {
   name: string;
   sku: string;
@@ -234,7 +240,7 @@ export interface MenuItem extends BaseEntity {
   is_available: boolean;
   is_combo?: boolean;
   combo_items?: any[] | null;
-  variants?: any[] | null;
+  variants?: MenuItemVariant[] | null;
   add_ons?: any[] | null;
   modifiers?: any[] | null;
   dynamic_pricing?: any;

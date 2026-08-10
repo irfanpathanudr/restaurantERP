@@ -1,5 +1,6 @@
 import { IsString, IsNumber, IsOptional, IsUUID, IsEnum, IsBoolean } from 'class-validator';
-import { MenuItemType } from './CreateMenuItemDto';
+import { Transform } from 'class-transformer';
+import { FoodType, SpicyLevel, PortionSize } from './CreateMenuItemDto';
 
 export class UpdateMenuItemDto {
   @IsOptional()
@@ -8,23 +9,42 @@ export class UpdateMenuItemDto {
 
   @IsOptional()
   @IsString()
+  sku?: string;
+
+  @IsOptional()
+  @IsString()
   description?: string;
 
   @IsOptional()
-  @IsNumber()
+  @IsUUID('4', { message: 'Invalid category ID' })
+  category_id?: string;
+
+  @IsOptional()
+  @IsNumber({}, { message: 'Price must be a number' })
+  @Transform(({ value }) => value ? parseFloat(value) : undefined)
   price?: number;
 
   @IsOptional()
+  @IsNumber({}, { message: 'Cost price must be a number' })
+  @Transform(({ value }) => value ? parseFloat(value) : undefined)
+  cost_price?: number;
+
+  @IsOptional()
+  @IsEnum(FoodType)
+  food_type?: FoodType;
+
+  @IsOptional()
+  @IsEnum(SpicyLevel)
+  spicy_level?: SpicyLevel;
+
+  @IsOptional()
+  @IsEnum(PortionSize)
+  portion_size?: PortionSize;
+
+  @IsOptional()
   @IsNumber()
-  discountPrice?: number;
-
-  @IsOptional()
-  @IsEnum(MenuItemType)
-  type?: MenuItemType;
-
-  @IsOptional()
-  @IsUUID()
-  categoryId?: string;
+  @Transform(({ value }) => value ? parseInt(value) : undefined)
+  preparation_time?: number;
 
   @IsOptional()
   @IsString()
@@ -32,13 +52,16 @@ export class UpdateMenuItemDto {
 
   @IsOptional()
   @IsBoolean()
-  isAvailable?: boolean;
+  is_vegetarian?: boolean;
 
   @IsOptional()
-  @IsString()
-  sku?: string;
+  @IsBoolean()
+  is_vegan?: boolean;
 
   @IsOptional()
-  @IsNumber()
-  preparationTime?: number;
+  allergens?: string | string[];
+
+  @IsOptional()
+  @IsBoolean()
+  is_available?: boolean;
 }

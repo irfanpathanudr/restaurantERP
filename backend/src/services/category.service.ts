@@ -12,6 +12,13 @@ export class CategoryService {
 
   async create(data: CreateCategoryDto): Promise<Category> {
     try {
+      // Auto-generate code if not provided
+      if (!data.code) {
+        const categoryName = data.name.toUpperCase().replace(/[^A-Z0-9]/g, '_');
+        const timestamp = Date.now().toString().slice(-6);
+        data.code = `${categoryName.slice(0, 10)}_${timestamp}`;
+      }
+
       const category = this.categoryRepository.create(data);
       await this.categoryRepository.save(category);
       logger.info(`Category created: ${category.id}`);

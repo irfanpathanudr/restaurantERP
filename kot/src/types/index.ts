@@ -34,6 +34,12 @@ export interface Table {
   dining_area?: string | null;
 }
 
+export interface MenuItemVariant {
+  name: string;
+  price: number;
+  portion_size: 'small' | 'medium' | 'large';
+}
+
 export interface MenuItem {
   id: string;
   name: string;
@@ -45,6 +51,7 @@ export interface MenuItem {
   sku?: string;
   image?: string | null;
   kitchens?: { id: string; name: string }[];
+  variants?: MenuItemVariant[] | null;
 }
 
 export interface Category {
@@ -124,6 +131,7 @@ export interface CartLine {
   unitPrice: number;
   quantity: number;
   specialInstructions?: string;
+  variantName?: string;
 }
 
 export type AppRole = 'waiter' | 'chef' | 'manager' | 'cashier' | 'admin';

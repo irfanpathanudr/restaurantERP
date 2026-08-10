@@ -27,5 +27,6 @@ router.post('/', checkPermission('menu.create'), validateDTO(CreateMenuItemDto),
 router.put('/:id', checkPermission('menu.update'), validateDTO(UpdateMenuItemDto), menuItemController.update);
 router.delete('/:id', checkPermission('menu.delete'), menuItemController.delete);
 router.patch('/:id/availability', checkPermission('menu.update'), menuItemController.toggleAvailability);
+router.patch('/:id/toggle-availability', checkPermission('menu.update'), menuItemController.toggleAvailability);
 
 export default router;

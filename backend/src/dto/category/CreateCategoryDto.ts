@@ -1,9 +1,13 @@
-import { IsNotEmpty, IsString, IsOptional, IsUUID } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional, IsUUID, IsInt, IsBoolean } from 'class-validator';
 
 export class CreateCategoryDto {
   @IsNotEmpty()
   @IsString()
   name: string;
+
+  @IsOptional()
+  @IsString()
+  code?: string;
 
   @IsOptional()
   @IsString()
@@ -13,11 +17,15 @@ export class CreateCategoryDto {
   @IsString()
   image?: string;
 
-  @IsNotEmpty()
-  @IsUUID()
-  branchId: string;
-
   @IsOptional()
   @IsUUID()
-  parentCategoryId?: string;
+  parent_category_id?: string;
+
+  @IsOptional()
+  @IsInt()
+  sort_order?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  is_active?: boolean;
 }

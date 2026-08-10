@@ -1,9 +1,13 @@
-import { IsString, IsOptional, IsUUID } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsInt, IsBoolean } from 'class-validator';
 
 export class UpdateCategoryDto {
   @IsOptional()
   @IsString()
   name?: string;
+
+  @IsOptional()
+  @IsString()
+  code?: string;
 
   @IsOptional()
   @IsString()
@@ -15,5 +19,13 @@ export class UpdateCategoryDto {
 
   @IsOptional()
   @IsUUID()
-  parentCategoryId?: string;
+  parent_category_id?: string;
+
+  @IsOptional()
+  @IsInt()
+  sort_order?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  is_active?: boolean;
 }

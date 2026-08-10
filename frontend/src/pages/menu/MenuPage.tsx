@@ -11,26 +11,9 @@ import { API_CONFIG } from '@/config/api';
 import { Plus, Edit, Trash2, Eye, EyeOff, Download, Upload, FileSpreadsheet, Image as ImageIcon } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { cn } from '@/utils/cn';
+import { MenuItem as MenuItemType, MenuItemVariant } from '@/types/entities.types';
 
-interface MenuItem {
-  id: string;
-  name: string;
-  sku: string;
-  description: string;
-  price: number | string;
-  cost_price: number | string;
-  category_id: string;
-  image_url?: string;
-  is_available: boolean;
-  preparation_time: number;
-  is_vegetarian: boolean;
-  is_vegan: boolean;
-  allergens?: string | string[];
-  category?: {
-    id: string;
-    name: string;
-  };
-}
+type MenuItem = MenuItemType;
 
 interface Category {
   id: string;
@@ -172,7 +155,37 @@ const MenuPage: React.FC = () => {
       setShowModal(false);
       fetchMenuItems();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Operation failed');
+      console.error('Submit error:', error);
+      
+      // Handle validation errors
+      if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+        const errors = error.response.data.errors;
+        
+        // Show each field error
+        errors.forEach((err: any) => {
+          const field = err.field;
+          const constraints = err.constraints;
+          
+          if (constraints) {
+            // Get the first constraint message
+            const message = Object.values(constraints)[0] as string;
+            toast.error(`${field}: ${message}`);
+          }
+        });
+        
+        // Show summary message
+        const fieldNames = errors.map((e: any) => e.field).join(', ');
+        toast.error(`Please fix validation errors: ${fieldNames}`, { duration: 5000 });
+      } else if (error.response?.data?.message) {
+        // Show server error message
+        toast.error(error.response.data.message);
+      } else if (error.message) {
+        // Show error message
+        toast.error(error.message);
+      } else {
+        // Fallback error
+        toast.error('Operation failed. Please try again.');
+      }
     }
   };
 
@@ -351,11 +364,37 @@ const MenuPage: React.FC = () => {
     {
       accessorKey: 'price',
       header: 'Price',
-      cell: ({ row }) => (
-        <span className="font-medium">
-          ₹{Number(row.original.price || 0).toFixed(2)}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const item = row.original;
+        // If item has variants (half/full), show both prices
+        if (item.variants && Array.isArray(item.variants) && item.variants.length > 0) {
+          const halfVariant = item.variants.find((v: MenuItemVariant) => v.name === 'Half');
+          const fullVariant = item.variants.find((v: MenuItemVariant) => v.name === 'Full');
+          
+          return (
+            <div className="flex flex-col gap-1">
+              {halfVariant && (
+                <div className="text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Half: </span>
+                  <span className="font-medium">₹{Number(halfVariant.price || 0).toFixed(2)}</span>
+                </div>
+              )}
+              {fullVariant && (
+                <div className="text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Full: </span>
+                  <span className="font-medium">₹{Number(fullVariant.price || 0).toFixed(2)}</span>
+                </div>
+              )}
+            </div>
+          );
+        }
+        // Otherwise show single price
+        return (
+          <span className="font-medium">
+            ₹{Number(item.price || 0).toFixed(2)}
+          </span>
+        );
+      },
     },
     {
       accessorKey: 'preparation_time',

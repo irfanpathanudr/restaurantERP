@@ -110,7 +110,37 @@ const CategoryPage: React.FC = () => {
       setShowModal(false);
       fetchCategories();
     } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Operation failed');
+      console.error('Submit error:', error);
+      
+      // Handle validation errors
+      if (error.response?.data?.errors && Array.isArray(error.response.data.errors)) {
+        const errors = error.response.data.errors;
+        
+        // Show each field error
+        errors.forEach((err: any) => {
+          const field = err.field;
+          const constraints = err.constraints;
+          
+          if (constraints) {
+            // Get the first constraint message
+            const message = Object.values(constraints)[0] as string;
+            toast.error(`${field}: ${message}`);
+          }
+        });
+        
+        // Show summary message
+        const fieldNames = errors.map((e: any) => e.field).join(', ');
+        toast.error(`Please fix validation errors: ${fieldNames}`, { duration: 5000 });
+      } else if (error.response?.data?.message) {
+        // Show server error message
+        toast.error(error.response.data.message);
+      } else if (error.message) {
+        // Show error message
+        toast.error(error.message);
+      } else {
+        // Fallback error
+        toast.error('Operation failed. Please try again.');
+      }
     }
   };
 

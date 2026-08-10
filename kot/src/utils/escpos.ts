@@ -396,8 +396,15 @@ export async function printBillBluetooth(order: {
 
 // ─── Fallback: browser print (non-Bluetooth environments) ────────────────────
 export function printKotFallback(payload: Parameters<typeof printKotBluetooth>[0]): void {
-  const win = window.open('', '_blank', 'width=320,height=600');
-  if (!win) return;
+  // Create hidden iframe for silent printing
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  document.body.appendChild(iframe);
 
   const rows = payload.items
     .map(
@@ -413,7 +420,14 @@ export function printKotFallback(payload: Parameters<typeof printKotBluetooth>[0
     )
     .join('');
 
-  win.document.write(`<!DOCTYPE html><html><head>
+  const doc = iframe.contentWindow?.document;
+  if (!doc) {
+    document.body.removeChild(iframe);
+    return;
+  }
+
+  doc.open();
+  doc.write(`<!DOCTYPE html><html><head>
     <meta charset="utf-8"/>
     <title>KOT ${payload.kotNumber}</title>
     <style>
@@ -440,17 +454,31 @@ export function printKotFallback(payload: Parameters<typeof printKotBluetooth>[0
     <table>${rows}</table>
     ${payload.specialInstructions ? `<div class="div"></div><div>Note: ${payload.specialInstructions}</div>` : ''}
     <div class="div"></div>
-    <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),600)}</script>
   </body></html>`);
-  win.document.close();
+  doc.close();
+
+  // Auto-print after content loads and remove iframe
+  setTimeout(() => {
+    iframe.contentWindow?.print();
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+    }, 1000);
+  }, 100);
 }
 
 export function printBillFallback(order: Parameters<typeof printBillBluetooth>[0]): void {
   const fmt = (n: number | string | undefined | null) =>
     'Rs.' + (Number(n) || 0).toFixed(2);
 
-  const win = window.open('', '_blank', 'width=320,height=700');
-  if (!win) return;
+  // Create hidden iframe for silent printing
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.right = '0';
+  iframe.style.bottom = '0';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = '0';
+  document.body.appendChild(iframe);
 
   const rows = (order.order_items || [])
     .map(
@@ -463,7 +491,14 @@ export function printBillFallback(order: Parameters<typeof printBillBluetooth>[0
     )
     .join('');
 
-  win.document.write(`<!DOCTYPE html><html><head>
+  const doc = iframe.contentWindow?.document;
+  if (!doc) {
+    document.body.removeChild(iframe);
+    return;
+  }
+
+  doc.open();
+  doc.write(`<!DOCTYPE html><html><head>
     <meta charset="utf-8"/>
     <title>Bill ${order.order_number}</title>
     <style>
@@ -507,7 +542,14 @@ export function printBillFallback(order: Parameters<typeof printBillBluetooth>[0
     ${order.payment_method ? `<div class="row"><span>Payment:</span><span>${order.payment_method.toUpperCase()}</span></div>` : ''}
     <div class="div"></div>
     <div class="footer">Thank you for your visit!<br/>Please come again</div>
-    <script>window.onload=()=>{window.print();setTimeout(()=>window.close(),600)}</script>
   </body></html>`);
-  win.document.close();
+  doc.close();
+
+  // Auto-print after content loads and remove iframe
+  setTimeout(() => {
+    iframe.contentWindow?.print();
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+    }, 1000);
+  }, 100);
 }

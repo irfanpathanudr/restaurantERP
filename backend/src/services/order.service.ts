@@ -106,6 +106,7 @@ export class OrderService {
           quantity: item.quantity,
           total: Number((price * item.quantity).toFixed(2)),
           special_instructions: item.specialInstructions || null,
+          variants: item.variantName ? { selected: item.variantName } : null,
         };
       });
 

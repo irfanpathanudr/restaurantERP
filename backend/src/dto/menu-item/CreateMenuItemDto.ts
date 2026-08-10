@@ -1,40 +1,71 @@
-import { IsNotEmpty, IsString, IsNumber, IsOptional, IsUUID, IsEnum, IsBoolean } from 'class-validator';
+import { IsNotEmpty, IsString, IsNumber, IsOptional, IsUUID, IsEnum, IsBoolean, IsArray } from 'class-validator';
+import { Transform } from 'class-transformer';
 
-export enum MenuItemType {
+export enum FoodType {
   VEG = 'veg',
   NON_VEG = 'non_veg',
-  VEGAN = 'vegan',
-  BEVERAGE = 'beverage',
+  EGG = 'egg',
+  JAIN = 'jain',
+}
+
+export enum SpicyLevel {
+  NONE = 'none',
+  MILD = 'mild',
+  MEDIUM = 'medium',
+  HOT = 'hot',
+  EXTRA_HOT = 'extra_hot',
+}
+
+export enum PortionSize {
+  SMALL = 'small',
+  MEDIUM = 'medium',
+  LARGE = 'large',
+  CUSTOM = 'custom',
 }
 
 export class CreateMenuItemDto {
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Name is required' })
   @IsString()
   name: string;
+
+  @IsNotEmpty({ message: 'SKU is required' })
+  @IsString()
+  sku: string;
 
   @IsOptional()
   @IsString()
   description?: string;
 
-  @IsNotEmpty()
-  @IsNumber()
+  @IsNotEmpty({ message: 'Category is required' })
+  @IsUUID('4', { message: 'Invalid category ID' })
+  category_id: string;
+
+  @IsNotEmpty({ message: 'Price is required' })
+  @IsNumber({}, { message: 'Price must be a number' })
+  @Transform(({ value }) => parseFloat(value))
   price: number;
 
   @IsOptional()
+  @IsNumber({}, { message: 'Cost price must be a number' })
+  @Transform(({ value }) => value ? parseFloat(value) : null)
+  cost_price?: number;
+
+  @IsOptional()
+  @IsEnum(FoodType, { message: 'Food type must be one of: veg, non_veg, egg, jain' })
+  food_type?: FoodType;
+
+  @IsOptional()
+  @IsEnum(SpicyLevel)
+  spicy_level?: SpicyLevel;
+
+  @IsOptional()
+  @IsEnum(PortionSize)
+  portion_size?: PortionSize;
+
+  @IsOptional()
   @IsNumber()
-  discountPrice?: number;
-
-  @IsNotEmpty()
-  @IsEnum(MenuItemType)
-  type: MenuItemType;
-
-  @IsNotEmpty()
-  @IsUUID()
-  categoryId: string;
-
-  @IsNotEmpty()
-  @IsUUID()
-  branchId: string;
+  @Transform(({ value }) => value ? parseInt(value) : null)
+  preparation_time?: number;
 
   @IsOptional()
   @IsString()
@@ -42,13 +73,16 @@ export class CreateMenuItemDto {
 
   @IsOptional()
   @IsBoolean()
-  isAvailable?: boolean;
+  is_vegetarian?: boolean;
 
   @IsOptional()
-  @IsString()
-  sku?: string;
+  @IsBoolean()
+  is_vegan?: boolean;
 
   @IsOptional()
-  @IsNumber()
-  preparationTime?: number;
+  allergens?: string | string[];
+
+  @IsOptional()
+  @IsBoolean()
+  is_available?: boolean;
 }
